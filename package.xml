@@ -18,5 +18,7 @@
       <freecadmin>0.20.0</freecadmin>
     </workbench>
   </content>
-
+<depend>lxml</depend>
+<depend>gmsh</depend>
+<depend>pyg4ometry</depend>
 </package>
