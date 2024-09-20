@@ -20,5 +20,4 @@
   </content>
 <depend>lxml</depend>
 <depend>gmsh</depend>
-<depend>pyg4ometry</depend>
 </package>

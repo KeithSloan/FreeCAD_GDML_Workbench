@@ -1,2 +1,2 @@
 workbenches=Part,Mesh
-pylibs=lxml,gmsh,pyg4ometry
+pylibs=lxml,gmsh
