@@ -415,15 +415,28 @@ class noCommonFacePrompt(QtGui.QDialog):
 
 
 class SetBorderSurfaceFeature:
+
     def Activated(self):
         from PySide import QtGui, QtCore
-        from .exportGDML import getSubVols, checkFaces
+        from .exportGDML import buildDocTree, getSubVols, checkFaces
 
         print("Add SetBorderSurface")
         sel = FreeCADGui.Selection.getSelectionEx()
         # print(len(sel))
         if len(sel) != 3:
+            msg = "Need to select One Surface from \n     <opticals | Surfaces>\nand two Parts with a common surface"
+            self.popup(msg)
+            print(msg)
             return
+
+        # Attempt at fix need to buildDocTree ?
+        # buildTree now sets global childObjects 
+        worldObj = self.getWorldVol()
+        if worldObj is None:
+            return
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(worldObj)
+        buildDocTree()
 
         surfaceObj = None
         partList = []
@@ -484,6 +497,21 @@ class SetBorderSurfaceFeature:
                     self.SetBorderSurface(doc, surfaceObj, partList, False)
 
         return
+
+    def getWorldVol(self):
+        for obj in FreeCAD.ActiveDocument.RootObjects:
+            if obj.TypeId == "App::Part":
+                return obj
+
+    def popup(self, msg):
+        from PySide2 import QtWidgets
+        msg_box = QtWidgets.QMessageBox()
+        msg_box.setIcon(QtWidgets.QMessageBox.Information)
+        msg_box.setText(msg)
+        msg_box.setWindowTitle("Information")
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg_box.exec_()
+
 
     def SetBorderSurface(self, doc, surfaceObj, partList, commonFaceFlg):
         from .GDMLObjects import GDMLbordersurface

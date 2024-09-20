@@ -2390,7 +2390,10 @@ def createWorldVol(volName):
 def buildDocTree():
     from PySide import QtWidgets
 
+    # buildDocTree now builds global childObjects
+    # Used in exportGDML and GDMLCommands
     global childObjects
+    childObjects = {} # dictionary of list of child objects for each object
 
 
     # TypeIds that should not go in to the tree
@@ -2752,7 +2755,7 @@ def exportGDML(first, filepath, fileExt):
 
     # GDMLShared.setTrace(True)
     GDMLShared.trace("exportGDML")
-    print("====> Start GDML Export 1.9b")
+    print("====> Start GDML Export 2.0")
     print("File extension : " + fileExt)
 
     GDMLstructure()
@@ -2811,9 +2814,10 @@ def exportGDML(first, filepath, fileExt):
 
 
 def exportGDMLworld(first, filepath, fileExt):
-    global childObjects
+    # global childObjects
+    # childObjects = {}  # dictionary of list of child objects for each object
+    # buildDocTree now creates global childObjects 
 
-    childObjects = {}  # dictionaroy of list of child objects for each object
     buildDocTree()
     # for debugging doc tree
     for obj in childObjects:
