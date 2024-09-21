@@ -1038,7 +1038,8 @@ class AddMaterial(QtGui.QDialog):
         if volume not in volumeUnits:
             self.logWarning(f"density volume not in accepted units: {str(volumeUnits)}")
 
-    def addFormulaMaterial(self, compositionDict: dict[str, int]):
+    #def addFormulaMaterial(self, compositionDict: dict[str, int]):
+    def addFormulaMaterial(self, compositionDict):
         from .GDMLObjects import (
             GDMLmaterial,
             GDMLfraction,
