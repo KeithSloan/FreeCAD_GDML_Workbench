@@ -2369,7 +2369,8 @@ def processMultiPlacement(obj, xmlParent):
         placer = MultiPlacer.getPlacer(pl)
         placer.place(volName)
         volName = placer.name()
-        volXML = placer.xml()
+        # Munther to REVIEW
+        #volXML = placer.xml()
         if j != 0:
             addPhysVolPlacement(pl, xmlParent, volName, pl.Placement)
 
