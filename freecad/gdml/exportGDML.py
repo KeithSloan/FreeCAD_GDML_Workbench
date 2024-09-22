@@ -2534,7 +2534,10 @@ def isAssembly(obj):
         # need to check for arrays. Arrays of App::Part are treated as an assembly
         if len(childObjects[obj]) == 1:
             topObject = childObjects[obj][0]
-            if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
+            print(f"topObject {topObject.Label}")
+            # Munther REVIEW
+            #if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
+            if isArrayType(topObject) and topObject.TypeId == "App::Part":
                 return True
             else:
                 return False
