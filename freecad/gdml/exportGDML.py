@@ -1368,7 +1368,9 @@ def _getSubVols(vol, placement, volLabel):
         # print(obj.Label)
         if hasattr(obj, "LinkedObject"):
             typeId = obj.LinkedObject.TypeId
-            tObj = childObjects[obj][0]
+            # Munther REVIEW
+            #tObj = childObjects[obj][0]
+            tObj = childObjects[obj]
 
         if typeId == "App::Part":
             volsList += _getSubVols(
@@ -2245,7 +2247,7 @@ def processContainer(vol, xmlParent, psPlacement):
     # vol: a container: a volume that has a solid that contains other volume
     # psPlacement: placement of parent solid. Could be None.
     #
-    print("Process Container")
+    print(f"Process Container {vol.Label}")
     global structure
     global physVolStack
 
@@ -2253,6 +2255,7 @@ def processContainer(vol, xmlParent, psPlacement):
     objects = assemblyHeads(vol)
     newXmlVol = createXMLvolume(volName)
     solidExporter = SolidExporter.getExporter(objects[0])
+    #print(f"solidExporter {objects[0].Label} {solidExporter}")
     solidExporter.export()
     addVolRef(
         newXmlVol, volName, objects[0], solidExporter.name(), addColor=True
@@ -3107,7 +3110,6 @@ def export(exportList, filepath):
     elif fileExt == ".GEMC":
         exportGEMC(first, path, True)
 
-
 #
 # -------------------------------------------------------------------------------------------------------
 #
@@ -3169,10 +3171,15 @@ class SolidExporter:
         print(f"isSolid {obj.Label}")
         # return hasattr(obj, 'Shape')  # does not work. App::Parts have Shape, but they are not solids!
 
-        obj1 = obj
-        if obj.TypeId == "App::Link":
-            obj1 = obj.LinkedObject
-        if obj1.TypeId == "Part::FeaturePython":
+        # Munther Review
+        # Extra Test case simple_array_expanded
+        # obj1 = obj
+        # if obj.TypeId == "App::Link":
+        #    obj1 = obj.LinkedObject)
+        #if obj1.TypeId == "Part::FeaturePython":
+        if hasattr(obj, "LinkedObject"):
+            return SolidExporter.isSolid(obj.LinkedObject)
+        if obj.TypeId == "Part::FeaturePython":
             return True  # All Part::FeturePython have a 'Shape', and a Shape can be tessellated
             '''
             typeId = obj1.Proxy.Type
@@ -3194,11 +3201,17 @@ class SolidExporter:
             '''
 
         else:
-            return obj1.TypeId in SolidExporter.solidExporters
+            # Munther REVIEW
+            #return obj1.TypeId in SolidExporter.solidExporters
+            return obj.TypeId in SolidExporter.solidExporters
 
 
     @staticmethod
     def getExporter(obj):
+        # Munther Review
+        # Extra Test case simple_array_expanded
+        if hasattr(obj, "LinkedObject"):
+            return SolidExporter.getExporter(obj.LinkedObject)
         if obj.TypeId == "Part::FeaturePython":
             if hasattr(obj.Proxy, 'Type'):
                 typeId = obj.Proxy.Type
