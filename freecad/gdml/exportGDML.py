@@ -4939,7 +4939,8 @@ def pointInsideEdge(v0, v1, normal):
         return True
 
 
-def edgelistArea(edgelist: list[Part.Edge]) -> float:
+#def edgelistArea(edgelist: list[Part.Edge]) -> float:
+def edgelistArea(edgelist) -> float:
     face = Part.Face(Part.Wire(edgelist))
     return face.Area
 
