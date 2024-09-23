@@ -6144,7 +6144,8 @@ class AutoTessellateExporter(SolidExporter):
 
 
     @staticmethod
-    def centerOfMass(pts: [Vector]) -> Vector:
+    #def centerOfMass(pts: [Vector]) -> Vector:
+    def centerOfMass(pts) -> Vector:
         cm = Vector(0, 0, 0)
         for pt in pts:
             cm += pt
@@ -6152,7 +6153,8 @@ class AutoTessellateExporter(SolidExporter):
         return cm
 
     @staticmethod
-    def principalMoments(pts: [Vector]) -> tuple:
+    #def principalMoments(pts: [Vector]) -> tuple:
+    def principalMoments(pts) -> tuple:
         Ixx = 0
         Iyy = 0
         Izz = 0
