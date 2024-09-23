@@ -3163,7 +3163,8 @@ class SolidExporter:
         "Part::Fillet": "AutoTessellateExporter",
         "Part::Chamfer": "AutoTessellateExporter",
         "Part::Loft": "AutoTessellateExporter",
-        "Part::Sweep": "AutoTessellateExporter"
+        "Part::Sweep": "AutoTessellateExporter",
+        "Part::Feature": "AutoTessellateExporter" # Has been checked for Shape
     }
 
     @staticmethod
@@ -3180,7 +3181,10 @@ class SolidExporter:
         if hasattr(obj, "LinkedObject"):
             return SolidExporter.isSolid(obj.LinkedObject)
         if obj.TypeId == "Part::FeaturePython":
-            return True  # All Part::FeturePython have a 'Shape', and a Shape can be tessellated
+            return True  # All Part::FeaturePython have a 'Shape', and a Shape can be tessellated
+        if obj.TypeId == "Part::Feature":
+            if hasattr(obj, "Shape"):
+                return True # Any Object with a Shape can be Tessellated    
             '''
             typeId = obj1.Proxy.Type
             if typeId == "Array":
