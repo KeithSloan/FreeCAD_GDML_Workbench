@@ -1666,6 +1666,40 @@ class BoxFeature:
             ),
         }
 
+class ValueRange(QtGui.QWidget):
+    def __init__(self, name, startVal, endVal, incVal):
+        super().__init__()
+        self.layout = QtGui.QHBoxLayout()
+        self.name = QtGui.QLineEdit()
+        self.name.setText(name)
+        doubleValidator = QtGui.QDoubleValidator(0.0, 1000.0, 2)
+        doubleValidator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+        self.start = QtGui.QLineEdit()
+        self.start.setValidator(doubleValidator)
+        self.layout.addWidget(self.start)
+        self.end = QtGui.QLineEdit()
+        self.end.setValidator(doubleValidator)
+        self.layout.addWidget(self.end)
+        self.increment = QtGui.QLineEdit()
+        self.increment.setValidator(doubleValidator)
+        self.layout.addWidget(self.increment)
+        self.setLayout = self.layout
+
+
+class Planes(QtGui.QWidget):
+    def __init__(self, number):
+        super().__init__()
+        self.layout = QtGui.QHBoxLayout()
+        self.name = QtGui.QLineEdit()
+        self.name.setText("Number of Planes")
+        self.number = QtGui.QLineEdit()
+        intValidator = QtGui.QIntValidator(1, 100)
+        self.number.setValidator(intValidator)
+        self.number.setText(str(number))
+        self.layout.addWidget(self.number)
+        self.setLayout = self.layout
+
+
 class PolyConeDialog(QtGui.QDialog):
     def __init__(self):
         super(PolyConeDialog, self).__init__()
@@ -1689,30 +1723,38 @@ class PolyConeDialog(QtGui.QDialog):
             QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
         )
         self.buttonBox.setObjectName("buttonBox")
-        self.textEdit = QtGui.QTextEdit(self)
-        self.textEdit.setGeometry(QtCore.QRect(10, 10, 381, 141))
-        self.textEdit.setLocale(
-            QtCore.QLocale(
-                QtCore.QLocale.English, QtCore.QLocale.UnitedKingdom
-            )
-        )
-        self.verticalLayoutWidget = QtGui.QWidget(self)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(60, 150, 271, 151))
-        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.verticalLayout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.groupBox = QtGui.QGroupBox(self.verticalLayoutWidget)
-        self.groupBox.setObjectName("groupBox")
-        self.horizontalLayoutWidget = QtGui.QWidget(self.groupBox)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 100, 231, 41))
-        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
-        self.horizontalLayout = QtGui.QHBoxLayout(self.horizontalLayoutWidget)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout.setObjectName("horizontalLayout")
+        #self.textEdit = QtGui.QTextEdit(self)
+        #self.textEdit.setGeometry(QtCore.QRect(10, 10, 381, 141))
+        #self.textEdit.setLocale(
+        #    QtCore.QLocale(
+        #        QtCore.QLocale.English, QtCore.QLocale.UnitedKingdom
+        #    )
+        #)
+        #self.verticalLayoutWidget = QtGui.QWidget(self)
+        #self.verticalLayoutWidget.setGeometry(QtCore.QRect(60, 150, 271, 151))
+        #self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        #self.verticalLayout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
+        #self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        #self.verticalLayout.setObjectName("verticalLayout")
+        #self.groupBox = QtGui.QGroupBox(self.verticalLayoutWidget)
+        #self.groupBox.setObjectName("groupBox")
+        #self.horizontalLayoutWidget = QtGui.QWidget(self.groupBox)
+        #self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 100, 231, 41))
+        #self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        #self.horizontalLayout = QtGui.QHBoxLayout(self.horizontalLayoutWidget)
+        #self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        #self.horizontalLayout.setObjectName("horizontalLayout")
         # self.retranslateUi()
+        self.verticalLayout = QtGui.QVBoxLayout()
+        self.planes = Planes(3)
+        self.verticalLayout.addWidget(self.planes)
+        self.rRange = ValueRange("Radius", 0, 9, 3)
+        self.verticalLayout.addWidget(self.rRange)
+        self.zRange = ValueRange("Radius", 0, 9, 3)
+        self.verticalLayout.addWidget(self.zRange)
         self.buttonBox.accepted.connect(self.onCreate)  # type: ignore
         self.buttonBox.rejected.connect(self.onCancel)  # type: ignore
+        self.setLayout(self.verticalLayout)
 
 
     def onCreate(self):
