@@ -498,6 +498,7 @@ class SetBorderSurfaceFeature:
 
         return
 
+
     def getWorldVol(self):
         for obj in FreeCAD.ActiveDocument.RootObjects:
             if obj.TypeId == "App::Part":
@@ -1665,6 +1666,138 @@ class BoxFeature:
             ),
         }
 
+class PolyConeDialog(QtGui.QDialog):
+    def __init__(self):
+        super(PolyConeDialog, self).__init__()
+        self.setupUi()
+        self.initUI()
+
+
+    def initUI(self):
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setMouseTracking(True)
+        self.show()
+
+
+    def setupUi(self):
+        self.setObjectName("Dialog")
+        self.resize(400, 362)
+        self.buttonBox = QtGui.QDialogButtonBox(self)
+        self.buttonBox.setGeometry(QtCore.QRect(30, 320, 341, 32))
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(
+            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
+        )
+        self.buttonBox.setObjectName("buttonBox")
+        self.textEdit = QtGui.QTextEdit(self)
+        self.textEdit.setGeometry(QtCore.QRect(10, 10, 381, 141))
+        self.textEdit.setLocale(
+            QtCore.QLocale(
+                QtCore.QLocale.English, QtCore.QLocale.UnitedKingdom
+            )
+        )
+        self.verticalLayoutWidget = QtGui.QWidget(self)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(60, 150, 271, 151))
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.verticalLayout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.groupBox = QtGui.QGroupBox(self.verticalLayoutWidget)
+        self.groupBox.setObjectName("groupBox")
+        self.horizontalLayoutWidget = QtGui.QWidget(self.groupBox)
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 100, 231, 41))
+        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        self.horizontalLayout = QtGui.QHBoxLayout(self.horizontalLayoutWidget)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        # self.retranslateUi()
+        self.buttonBox.accepted.connect(self.onCreate)  # type: ignore
+        self.buttonBox.rejected.connect(self.onCancel)  # type: ignore
+
+
+    def onCreate(self):
+        print(f"Create Polycon")
+
+
+    def onCancel(self):
+        self.reject()
+
+
+class PolyConeFeature:
+
+    def Activated(self):
+        from .GDMLObjects import (
+            GDMLGenericPolycone,
+            GDMLrzpoint,
+            ViewProvider,
+            ViewProviderExtension,
+        )    
+
+        sel = FreeCADGui.Selection.getSelection()
+        dialog = PolyConeDialog()
+        dialog.exec_()
+
+        objPart, material = getSelectedPM()
+        if objPart is None:
+            vol = FreeCAD.ActiveDocument.addObject("App::Part", "LV-PolyCone")
+        else:
+            vol = objPart.newObject("App::Part", "LV-PolyCone")
+        obj = vol.newObject("Part::FeaturePython", "GDMLPolyCone_PolyCone")
+        # print("GDMLBox Object - added")
+        # obj, x, y, z, lunits, material
+        #GDMLPolyCone(obj, 10.0, 10.0, 10.0, "mm", material)
+        # print("GDMLBox initiated")
+
+        obj.addExtension("App::GroupExtensionPython")
+        startphi = 0
+        deltaphi = 1
+        aunit = "rad"
+        lunit = "mm"
+        material = "G4_STAINLESS-STEEL"
+        colour = None
+        GDMLGenericPolycone(
+            obj, startphi, deltaphi, aunit, lunit, material, colour
+        )
+        if FreeCAD.GuiUp:
+            ViewProviderExtension(obj.ViewObject)
+
+        # mypolycone.ViewObject.DisplayMode = "Shaded"
+        for nPlane in range(4):
+            r = nPlane * 3
+            z = nPlane * 5
+            myrzpoint = FreeCAD.ActiveDocument.addObject(
+                "App::FeaturePython", "rzpoint"
+            )
+            obj.addObject(myrzpoint)
+            GDMLrzpoint(myrzpoint, r, z)
+            if FreeCAD.GuiUp:
+                ViewProvider(myrzpoint)
+        # base = FreeCAD.Vector(px, py, pz)
+        #mypolycone.Placement = GDMLShared.processPlacement(base, rot)
+        #GDMLShared.trace(mypolycone.Placement.Rotation)
+        if FreeCAD.GuiUp:
+            # set ViewProvider before setDisplay
+            #setDisplayMode(mypolycone, displayMode)
+            ViewProvider(obj.ViewObject)
+            FreeCAD.ActiveDocument.recompute()
+            FreeCADGui.SendMsgToActiveView("ViewFit")
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def GetResources(self):
+        return {
+            "Pixmap": "GDMLPolyConeFeature",
+            "MenuText": QtCore.QT_TRANSLATE_NOOP(
+                "GDMLPolyCone", "PolyCone Object"
+            ),
+            "ToolTip": QtCore.QT_TRANSLATE_NOOP(
+                "GDMLPolyConeFeature", "PolyCone Object"
+            ),
+        }
 
 class ConeFeature:
     # def IsActive(self):
@@ -3832,6 +3965,7 @@ FreeCADGui.addCommand("BooleanUnionCommand", BooleanUnionFeature())
 FreeCADGui.addCommand("BoxCommand", BoxFeature())
 FreeCADGui.addCommand("EllipsoidCommand", EllispoidFeature())
 FreeCADGui.addCommand("ElTubeCommand", ElliTubeFeature())
+FreeCADGui.addCommand("PolyConeCommand", PolyConeFeature())
 FreeCADGui.addCommand("ConeCommand", ConeFeature())
 FreeCADGui.addCommand("SphereCommand", SphereFeature())
 FreeCADGui.addCommand("TorusCommand", TorusFeature())
