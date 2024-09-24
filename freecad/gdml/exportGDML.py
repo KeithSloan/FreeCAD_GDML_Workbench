@@ -2103,6 +2103,7 @@ def processAssembly(vol, xmlVol, xmlParent, parentName, psPlacement):
     # App::Part will have Booleans & Multifuse objects also in the list
     # So for s in list is not so good
     # xmlVol could be created dummy volume
+    print(f"ProcessAssembly: {vol.Name} Label {vol.Label}")
 
     # GDMLShared.setTrace(True)
     volName = getVolumeName(vol)
@@ -2111,7 +2112,6 @@ def processAssembly(vol, xmlVol, xmlParent, parentName, psPlacement):
     #   printVolumeInfo(vol, xmlVol, xmlParent, parentName)
     assemObjs = assemblyHeads(vol)
     #  print(f"ProcessAssembly: vol.TypeId {vol.TypeId}")
-    print(f"ProcessAssembly: {vol.Name} Label {vol.Label}")
     print(f"Assem Objs {assemObjs}")
     #
     # Note that the assembly object is under an App::Part, not
@@ -2193,7 +2193,9 @@ def processVolume(vol, xmlParent, psPlacement, volName=None):
         solidExporter = SolidExporter.getExporter(topObject)
         if solidExporter is None:
             return
-        solidExporter.export()
+        # Munther Review
+        # Was solidExporter.export()
+        solidExporter.export(xmlParent)
         print(f"Process Volume - solids count {len(list(solids))}")
         # 1- adds a <volume element to <structure with name volName
         if volName == solidExporter.name():
@@ -4586,14 +4588,18 @@ class OrthoArrayExporter(SolidExporter):
         super().__init__(obj)
         self._name = "MultiUnion-" + self.obj.Label
 
-    def export(self):
+    def export(self, xmlParent=None):
         from . import arrayUtils
         base = self.obj.Base
         print(f"Base {base.Label}")
+        # Munther REVIEW
+        # Previous working never reached here
+        # processArrayPart in processAssembly
         if hasattr(base, "TypeId") and base.TypeId == "App::Part":
-            print(
-                f"**** Arrays of {base.TypeId} ({base.Label}) currently not supported ***"
-            )
+            #print(
+            #f"**** Arrays of {base.TypeId} ({base.Label}) currently not supported ***"
+            #)
+            processArrayPart(obj, xmlParent)
             return
         baseExporter = SolidExporter.getExporter(base)
         if baseExporter is None:
@@ -4642,14 +4648,18 @@ class PolarArrayExporter(SolidExporter):
         solidName = "MultiUnion-" + self.obj.Label
         return solidName
 
-    def export(self):
+    def export(self, xmlParent=None):
         from . import arrayUtils
         base = self.obj.Base
         print(base.Label)
+        # Munther REVIEW
+        # Previous working never reached here
+        # processArrayPart in processAssembly
         if hasattr(base, "TypeId") and base.TypeId == "App::Part":
-            print(
-                f"**** Arrays of {base.TypeId} ({base.Label}) currently not supported ***"
-            )
+            #print(
+            #    f"**** Arrays of {base.TypeId} ({base.Label}) currently not supported ***"
+            #)
+            processArrayPart(self.obj, xmlParent)
             return
         baseExporter = SolidExporter.getExporter(base)
         baseExporter.export()
