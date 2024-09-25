@@ -1667,7 +1667,7 @@ class BoxFeature:
         }
 
 class ValueRange(QtGui.QWidget):
-    def __init__(self, name, startVal, endVal, incVal):
+    def __init__(self, name, startVal, incVal):
         super().__init__()
         self.hlayout = QtGui.QHBoxLayout()
         self.name = QtGui.QLabel()
@@ -1679,10 +1679,6 @@ class ValueRange(QtGui.QWidget):
         self.start.setValidator(doubleValidator)
         self.start.setText(str(startVal))
         self.hlayout.addWidget(self.start)
-        self.end = QtGui.QLineEdit()
-        self.end.setValidator(doubleValidator)
-        self.hlayout.addWidget(self.end)
-        self.end.setText(str(endVal))
         self.increment = QtGui.QLineEdit()
         self.increment.setValidator(doubleValidator)
         self.increment.setText(str(incVal))
@@ -1728,12 +1724,14 @@ class PolyConeDialog(QtGui.QDialog):
     def setupUi(self):
         self.setObjectName("Dialog")
         self.resize(400, 362)
-        self.buttonBox = QtGui.QDialogButtonBox(self)
+        # Create a button box with OK and Cancel buttons
+        self.buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+
         self.buttonBox.setGeometry(QtCore.QRect(30, 320, 341, 24))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
-        )
+        #self.buttonBox.setStandardButtons(
+        #    QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
+        #)
         self.buttonBox.setObjectName("buttonBox")
         self.layout = QtGui.QVBoxLayout()
         self.planes = Planes(3)
@@ -1742,44 +1740,50 @@ class PolyConeDialog(QtGui.QDialog):
         self.Hlayout = QtGui.QHBoxLayout()
         self.Hlayout.addWidget(QtGui.QLabel("   Range"))
         self.Hlayout.addWidget(QtGui.QLabel("   Start"))
-        self.Hlayout.addWidget(QtGui.QLabel("   End"))
         self.Hlayout.addWidget(QtGui.QLabel("Increment"))
-        #self.layout.addLayout(self.Hlayout)
-        self.rRange = ValueRange("Radius", 0, 9, 3)
+        self.layout.addLayout(self.Hlayout)
+        self.rRange = ValueRange("Radius", 0, 9)
         self.layout.addWidget(self.rRange)
         #self.layout.addLayout(self.rRange.hlayout)
-        self.zRange = ValueRange("ZRange", 0, 9, 3)
+        self.zRange = ValueRange("ZRange", 0, 9)
         self.layout.addWidget(self.zRange)
         #self.layout.addLayout(self.zRange.hlayout)
-        self.setLayout(self.layout)    
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.buttonBox)
         self.buttonBox.accepted.connect(self.onCreate)  # type: ignore
         self.buttonBox.rejected.connect(self.onCancel)  # type: ignore
         self.setWindowTitle("Polycon Initial Parameters")
+        self.retStatus = 0
         self.show()
 
     def onCreate(self):
         print(f"Create Polycon")
+        self.retStatus = 1
+        self.close()
 
 
     def onCancel(self):
+        self.retStatus = -1
         self.reject()
 
 
 class PolyConeFeature:
 
     def Activated(self):
+        sel = FreeCADGui.Selection.getSelection()
+        dialog = PolyConeDialog()
+        dialog.exec_()
+        dialog.close()
+        if dialog.retStatus == 1:
+            self.CreatePolyCone(dialog)
+
+    def CreatePolyCone(self, dialog):
         from .GDMLObjects import (
             GDMLGenericPolycone,
             GDMLrzpoint,
             ViewProvider,
             ViewProviderExtension,
         )    
-
-        sel = FreeCADGui.Selection.getSelection()
-        dialog = PolyConeDialog()
-        dialog.exec_()
-        dialog.close()
-
         objPart, material = getSelectedPM()
         if objPart is None:
             vol = FreeCAD.ActiveDocument.addObject("App::Part", "LV-PolyCone")
@@ -1788,7 +1792,7 @@ class PolyConeFeature:
         obj = vol.newObject("Part::FeaturePython", "GDMLPolyCone_PolyCone")
         obj.addExtension("App::GroupExtensionPython")
         startphi = 0
-        deltaphi = 1
+        deltaphi = 6.28
         aunit = "rad"
         lunit = "mm"
         material = "G4_STAINLESS-STEEL"
@@ -1800,14 +1804,21 @@ class PolyConeFeature:
             ViewProviderExtension(obj.ViewObject)
 
         # mypolycone.ViewObject.DisplayMode = "Shaded"
-        for nPlane in range(4):
-            r = nPlane * 3
-            z = nPlane * 5
+        planes = int(dialog.planes.number.text())
+        rstart = int(dialog.rRange.start.text())
+        rinc = int(dialog.rRange.increment.text())
+        zstart = int(dialog.zRange.start.text())
+        zinc = int(dialog.zRange.increment.text())
+        r = rstart
+        z = zstart
+        for np in range(planes):
             myrzpoint = FreeCAD.ActiveDocument.addObject(
                 "App::FeaturePython", "rzpoint"
             )
             obj.addObject(myrzpoint)
             GDMLrzpoint(myrzpoint, r, z)
+            r += rinc
+            z += zinc
             if FreeCAD.GuiUp:
                 ViewProvider(myrzpoint)
         # base = FreeCAD.Vector(px, py, pz)
