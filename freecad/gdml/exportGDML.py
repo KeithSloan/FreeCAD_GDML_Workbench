@@ -1369,8 +1369,8 @@ def _getSubVols(vol, placement, volLabel):
         if hasattr(obj, "LinkedObject"):
             typeId = obj.LinkedObject.TypeId
             # Munther REVIEW
-            #tObj = childObjects[obj][0]
-            tObj = childObjects[obj]
+            tObj = childObjects[obj][0]
+            #tObj = childObjects[obj]
 
         if typeId == "App::Part":
             volsList += _getSubVols(
@@ -2539,8 +2539,8 @@ def isAssembly(obj):
             topObject = childObjects[obj][0]
             print(f"topObject {topObject.Label}")
             # Munther REVIEW
-            #if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
-            if isArrayType(topObject) and topObject.TypeId == "App::Part":
+            if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
+            #if isArrayType(topObject) and topObject.TypeId == "App::Part":
                 return True
             else:
                 return False
