@@ -150,10 +150,16 @@ class MirrorPlacer(MultiPlacer):
     def place(self, volRef):
         global structure
         assembly = ET.Element("assembly", {"name": self.obj.Label})
-        # structure.insert(0, assembly)
-        # insert just before worlVol, which should be last
-        worldIndex = len(structure) - 1
-        structure.insert(worldIndex, assembly)
+        # Munther REVIEW
+        # Not working Volumes must be before assembly
+        # Test file mirrorTest-1b
+        # Volumes refered to in Assembly must be exported first
+        # Test file mirrorTest-1b
+        # insert just before worldVol, which should be last
+        print(f"Len structure {len(structure)}")
+        #worldIndex = len(structure) - 1
+        #structure.insert(worldIndex, assembly)
+        structure.append(assembly)
         pos = self.obj.Source.Placement.Base
         name = volRef + "_mirror"
         # bordersurface might need physvol to have a name
@@ -1369,8 +1375,12 @@ def _getSubVols(vol, placement, volLabel):
         if hasattr(obj, "LinkedObject"):
             typeId = obj.LinkedObject.TypeId
             # Munther REVIEW
-            tObj = childObjects[obj][0]
-            #tObj = childObjects[obj]
+            #tObj = childObjects[obj][0]
+            # exception NewBS-NoArray-borderTest-1
+            try:
+                tObj = childObjects[obj][0]
+            except (IndexError, KeyError):
+                tObj = childObjects[obj]
 
         if typeId == "App::Part":
             volsList += _getSubVols(
@@ -2539,11 +2549,22 @@ def isAssembly(obj):
             topObject = childObjects[obj][0]
             print(f"topObject {topObject.Label}")
             # Munther REVIEW
-            if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
+            # Test files 
+            # simple_array
+            # arrayTest-6_scaled
+            # branch google drive
+            #if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
             #if isArrayType(topObject) and topObject.TypeId == "App::Part":
-                return True
-            else:
-                return False
+            #    return True
+            #else:
+            #    return False
+            if isArrayType(topObject):
+                if hasattr(topObject, "Base"):
+                    if topObject.Base.TypeId == "App::Part":
+                        return True
+                    if topObject.TypeId == "App::Part":
+                        return True
+            return False                
         else:
             return False
 
