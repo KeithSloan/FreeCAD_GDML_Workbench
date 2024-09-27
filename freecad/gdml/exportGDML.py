@@ -150,16 +150,10 @@ class MirrorPlacer(MultiPlacer):
     def place(self, volRef):
         global structure
         assembly = ET.Element("assembly", {"name": self.obj.Label})
-        # Munther REVIEW
-        # Not working Volumes must be before assembly
-        # Test file mirrorTest-1b
-        # Volumes refered to in Assembly must be exported first
-        # Test file mirrorTest-1b
-        # insert just before worldVol, which should be last
-        print(f"Len structure {len(structure)}")
-        #worldIndex = len(structure) - 1
-        #structure.insert(worldIndex, assembly)
-        structure.append(assembly)
+        # structure.insert(0, assembly)
+        # insert just before worlVol, which should be last
+        worldIndex = len(structure) - 1
+        structure.insert(worldIndex, assembly)
         pos = self.obj.Source.Placement.Base
         name = volRef + "_mirror"
         # bordersurface might need physvol to have a name
@@ -525,8 +519,6 @@ def createLVandPV(obj, name, solidName):
 def getVolumeName(obj):
     if obj.TypeId == "App::Part":
         return obj.Label
-    elif obj.TypeId == "App::Link":
-        return getVolumeName(obj.LinkedObject)    
     else:
         name = nameOfGDMLobject(obj)
         return "V-" + name
@@ -1374,13 +1366,7 @@ def _getSubVols(vol, placement, volLabel):
         # print(obj.Label)
         if hasattr(obj, "LinkedObject"):
             typeId = obj.LinkedObject.TypeId
-            # Munther REVIEW
-            #tObj = childObjects[obj][0]
-            # exception NewBS-NoArray-borderTest-1
-            try:
-                tObj = childObjects[obj][0]
-            except (IndexError, KeyError):
-                tObj = childObjects[obj]
+            tObj = childObjects[obj][0]
 
         if typeId == "App::Part":
             volsList += _getSubVols(
@@ -2257,7 +2243,7 @@ def processContainer(vol, xmlParent, psPlacement):
     # vol: a container: a volume that has a solid that contains other volume
     # psPlacement: placement of parent solid. Could be None.
     #
-    print(f"Process Container {vol.Label}")
+    print("Process Container")
     global structure
     global physVolStack
 
@@ -2265,7 +2251,6 @@ def processContainer(vol, xmlParent, psPlacement):
     objects = assemblyHeads(vol)
     newXmlVol = createXMLvolume(volName)
     solidExporter = SolidExporter.getExporter(objects[0])
-    #print(f"solidExporter {objects[0].Label} {solidExporter}")
     solidExporter.export()
     addVolRef(
         newXmlVol, volName, objects[0], solidExporter.name(), addColor=True
@@ -2382,8 +2367,7 @@ def processMultiPlacement(obj, xmlParent):
         placer = MultiPlacer.getPlacer(pl)
         placer.place(volName)
         volName = placer.name()
-        # Munther to REVIEW
-        #volXML = placer.xml()
+        volXML = placer.xml()
         if j != 0:
             addPhysVolPlacement(pl, xmlParent, volName, pl.Placement)
 
@@ -2404,10 +2388,7 @@ def createWorldVol(volName):
 def buildDocTree():
     from PySide import QtWidgets
 
-    # buildDocTree now builds global childObjects
-    # Used in exportGDML and GDMLCommands
     global childObjects
-    childObjects = {} # dictionary of list of child objects for each object
 
 
     # TypeIds that should not go in to the tree
@@ -2547,24 +2528,10 @@ def isAssembly(obj):
         # need to check for arrays. Arrays of App::Part are treated as an assembly
         if len(childObjects[obj]) == 1:
             topObject = childObjects[obj][0]
-            print(f"topObject {topObject.Label}")
-            # Munther REVIEW
-            # Test files 
-            # simple_array
-            # arrayTest-6_scaled
-            # branch google drive
-            #if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
-            #if isArrayType(topObject) and topObject.TypeId == "App::Part":
-            #    return True
-            #else:
-            #    return False
-            if isArrayType(topObject):
-                if hasattr(topObject, "Base"):
-                    if topObject.Base.TypeId == "App::Part":
-                        return True
-                    if topObject.TypeId == "App::Part":
-                        return True
-            return False                
+            if isArrayType(topObject) and topObject.Base.TypeId == "App::Part":
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -2783,7 +2750,7 @@ def exportGDML(first, filepath, fileExt):
 
     # GDMLShared.setTrace(True)
     GDMLShared.trace("exportGDML")
-    print("====> Start GDML Export 2.0")
+    print("====> Start GDML Export 1.9b")
     print("File extension : " + fileExt)
 
     GDMLstructure()
@@ -2842,10 +2809,9 @@ def exportGDML(first, filepath, fileExt):
 
 
 def exportGDMLworld(first, filepath, fileExt):
-    # global childObjects
-    # childObjects = {}  # dictionary of list of child objects for each object
-    # buildDocTree now creates global childObjects 
+    global childObjects
 
+    childObjects = {}  # dictionaroy of list of child objects for each object
     buildDocTree()
     # for debugging doc tree
     for obj in childObjects:
@@ -3108,7 +3074,7 @@ def export(exportList, filepath):
             from PySide import QtGui
 
             QtGui.QMessageBox.critical(
-                None, "Need to select a Part for export", "Need to select Part of GDML Volume to be exported \n\n Press OK to return"
+                None, "Need to select a Part for export", "Press OK"
             )
         # profiler.disable()
         # stats = pstats.Stats(profiler).sort_stats('cumtime')
@@ -3130,6 +3096,7 @@ def export(exportList, filepath):
 
     elif fileExt == ".GEMC":
         exportGEMC(first, path, True)
+
 
 #
 # -------------------------------------------------------------------------------------------------------
@@ -3192,15 +3159,10 @@ class SolidExporter:
         print(f"isSolid {obj.Label}")
         # return hasattr(obj, 'Shape')  # does not work. App::Parts have Shape, but they are not solids!
 
-        # Munther Review
-        # Extra Test case simple_array_expanded
-        # obj1 = obj
-        # if obj.TypeId == "App::Link":
-        #    obj1 = obj.LinkedObject)
-        #if obj1.TypeId == "Part::FeaturePython":
-        if hasattr(obj, "LinkedObject"):
-            return SolidExporter.isSolid(obj.LinkedObject)
-        if obj.TypeId == "Part::FeaturePython":
+        obj1 = obj
+        if obj.TypeId == "App::Link":
+            obj1 = obj.LinkedObject
+        if obj1.TypeId == "Part::FeaturePython":
             return True  # All Part::FeturePython have a 'Shape', and a Shape can be tessellated
             '''
             typeId = obj1.Proxy.Type
@@ -3222,17 +3184,11 @@ class SolidExporter:
             '''
 
         else:
-            # Munther REVIEW
-            #return obj1.TypeId in SolidExporter.solidExporters
-            return obj.TypeId in SolidExporter.solidExporters
+            return obj1.TypeId in SolidExporter.solidExporters
 
 
     @staticmethod
     def getExporter(obj):
-        # Munther Review
-        # Extra Test case simple_array_expanded
-        if hasattr(obj, "LinkedObject"):
-            return SolidExporter.getExporter(obj.LinkedObject)
         if obj.TypeId == "Part::FeaturePython":
             if hasattr(obj.Proxy, 'Type'):
                 typeId = obj.Proxy.Type
