@@ -5313,7 +5313,7 @@ class GDMLopticalsurface(GDMLcommon):
         elif finish == "ground":
             obj.finish = "ground | ground"
         else:
-            print(f"last finish {finish}")
+            #print(f"last finish {finish}")
             finish = finish.replace("polished", "polished | ")
             finish = finish.replace("etched", "etched | ")
             finish = finish.replace("ground", "ground | ")
@@ -5353,41 +5353,41 @@ class GDMLopticalsurface(GDMLcommon):
         self.ToNum = False
 
     def onChanged(self, fp, prop):
-        print(f"OnChanged prop {prop}")
+        #print(f"OnChanged prop {prop}")
         if prop == "finish":
-            print(f"Change finish {fp.finish} {fp.finishNum} {self.ToNum}")
+            #print(f"Change finish {fp.finish} {fp.finishNum} {self.ToNum}")
             if fp.finish != "Numeric":
                 self.ToNum = True
                 fp.finishNum = self.finish.index(fp.finish)
         
         elif prop == "finishNum":
-            print(f"Change finishNum {fp.finish} {fp.finishNum} {self.ToNum}")
+            #print(f"Change finishNum {fp.finish} {fp.finishNum} {self.ToNum}")
             if self.ToNum == False:
                 if fp.finish != "Numeric":
                     fp.finish = "Numeric"
             self.ToNum = False
 
         if prop == "type":
-            print(f"Change type {fp.type} {fp.typeNum} {self.ToNum}")
+            #print(f"Change type {fp.type} {fp.typeNum} {self.ToNum}")
             if fp.type != "Numeric":
                 self.ToNum = True
                 fp.typeNum = self.type.index(fp.type)
         
         elif prop == "typeNum":
-            print(f"Change TypeNum")
+            #print(f"Change TypeNum")
             if self.ToNum == False:
                 if fp.type != "Numeric":
                     fp.type = "Numeric"
             self.ToNum = False
 
         if prop == "model":
-            print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
+            #print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
             if fp.type != "Numeric":
                 self.ToNum = True
                 fp.modelNum = self.modelList.index(fp.model)
 
         elif prop == "modelNum":
-            print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
+            #print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
             if self.ToNum == False:
                 if fp.model != "Numeric":
                     fp.model = "Numeric"
