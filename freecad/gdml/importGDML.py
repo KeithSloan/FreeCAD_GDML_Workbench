@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Fri Aug 30 2024
 # emacs insert date command: Ctrl-U ESC-! date
 # in pycharm type "date" and then TAB
 # Mon Aug 26 2024
@@ -279,9 +280,18 @@ def createArb8(part, solid, material, colour, px, py, pz, rot, displayMode):
         material,
         colour,
     )
+
+    for prop in ["v1x", "v1y", "v2x", "v2y", "v3x", "v3y", "v4x", "v4y",
+                 "v5x", "v5y", "v6x", "v6y", "v7x", "v7y", "v8x", "v8y"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myArb8.setExpression(prop, expr)
+
     GDMLShared.trace(
         "Logical Position : " + str(px) + "," + str(py) + "," + str(pz)
     )
+
+
     base = FreeCAD.Vector(px, py, pz)
     myArb8.Placement = GDMLShared.processPlacement(base, rot)
     GDMLShared.trace(myArb8.Placement.Rotation)
@@ -319,6 +329,11 @@ def createBox(
     GDMLShared.trace(
         "Logical Position : " + str(px) + "," + str(py) + "," + str(pz)
     )
+    for prop in ["x", "y", "z"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mycube.setExpression(prop, expr)
+
     base = FreeCAD.Vector(px, py, pz)
     mycube.Placement = GDMLShared.processPlacement(base, rot)
     GDMLShared.trace(mycube.Placement.Rotation)
@@ -363,6 +378,11 @@ def createCone(
         material,
         colour,
     )
+    for prop in ["rmin1", "rmax1", "rmin2", "rmax2", "startphi", "z", "deltaphi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mycone.setExpression(prop, expr)
+
     GDMLShared.trace("CreateCone : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -388,6 +408,11 @@ def createElcone(part, solid, material, colour, px, py, pz, rot, displayMode, so
     #    solidName = getName(solid)
     myelcone = newPartFeature(part, getSolidName(solid,  solidName))
     GDMLElCone(myelcone, dx, dy, zmax, zcut, lunit, material, colour)
+    for prop in ["dx", "dy", "zmax", "zcut"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myelcone.setExpression(prop, expr)
+
     GDMLShared.trace("CreateElCone : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -419,6 +444,11 @@ def createEllipsoid(
     myelli = newPartFeature(part, getSolidName(solid, solidName))
     # cuts 0 for now
     GDMLEllipsoid(myelli, ax, by, cz, zcut1, zcut2, lunit, material, colour)
+    for prop in ["ax", "by", "cz", "zcut1", "zcut2"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myelli.setExpression(prop, expr)
+
     GDMLShared.trace("CreateEllipsoid : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -444,6 +474,12 @@ def createEltube(part, solid, material, colour, px, py, pz, rot, displayMode, so
     #    solidName = getName(solid)
     myeltube = newPartFeature(part, getSolidName(solid, solidName))
     GDMLElTube(myeltube, dx, dy, dz, lunit, material, colour)
+
+    for prop in ["dx", "dy", "dz" ]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myeltube.setExpression(prop, expr)
+
     GDMLShared.trace("CreateElTube : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -479,6 +515,12 @@ def createGenericPolycone(
     GDMLGenericPolycone(
         mypolycone, startphi, deltaphi, aunit, lunit, material, colour
     )
+
+    for prop in ["startphi", "deltaphi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolycone.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolycone.ViewObject)
 
@@ -524,6 +566,8 @@ def createGenericPolyhedra(
     aunit = getText(solid, "aunit", "rad")
     lunit = getText(solid, "lunit", "mm")
     mypolyhedra = newPartFeature(part, getSolidName(solid, solidName))
+
+
     mypolyhedra.addExtension("App::GroupExtensionPython")
     GDMLGenericPolyhedra(
         mypolyhedra,
@@ -535,6 +579,12 @@ def createGenericPolyhedra(
         material,
         colour,
     )
+
+    for prop in ["startphi", "deltaphi", "numsides"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolyhedra.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolyhedra.ViewObject)
 
@@ -575,6 +625,12 @@ def createOrb(
     #    solidName = getName(solid)
     myorb = newPartFeature(part, getSolidName(solid, solidName))
     GDMLOrb(myorb, r, lunit, material, colour)
+
+    for prop in ["r"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myorb.setExpression(prop, expr)
+
     GDMLShared.trace("CreateOrb : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -608,6 +664,12 @@ def createPara(
     GDMLPara(
         mypara, x, y, z, alpha, theta, phi, aunit, lunit, material, colour
     )
+
+    for prop in ["x", "y", "z", "alpha", "theta", "phi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypara.setExpression(prop, expr)
+
     GDMLShared.trace("CreatePara : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -640,6 +702,12 @@ def createHype(
     GDMLHype(
         myhype, rmin, rmax, z, inst, outst, aunit, lunit, material, colour
     )
+
+    for prop in ["rmin", "rmax", "z", "inst", "outst"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myhype.setExpression(prop, expr)
+
     GDMLShared.trace("CreateHype : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -665,6 +733,12 @@ def createParaboloid(
     dz = GDMLShared.getVal(solid, "dz")
     myparaboloid = newPartFeature(part, getSolidName(solid, solidName))
     GDMLParaboloid(myparaboloid, rlo, rhi, dz, lunit, material, colour)
+
+    for prop in ["rlo", "rhi", "dz"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            myparaboloid.setExpression(prop, expr)
+
     GDMLShared.trace("CreateParaboloid : ")
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
@@ -698,6 +772,12 @@ def createPolycone(
     GDMLPolycone(
         mypolycone, startphi, deltaphi, aunit, lunit, material, colour
     )
+
+    for prop in ["startphi", "deltaphi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolycone.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolycone.ViewObject)
 
@@ -756,6 +836,12 @@ def createPolyhedra(
         material,
         colour,
     )
+
+    for prop in ["startphi", "deltaphi", "numsides"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolyhedra.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolyhedra.ViewObject)
 
@@ -797,10 +883,14 @@ def createScaledSolid(
     )
     scale = solid.find("scale")
     scaleName = scale.get("name")
+
     sx = GDMLShared.getVal(scale, "x")
     sy = GDMLShared.getVal(scale, "y")
     sz = GDMLShared.getVal(scale, "z")
     scaleVec = FreeCAD.Vector(sx, sy, sz)
+
+    # TODO scaling parameters as expressions
+
     mat = FreeCAD.Matrix()
     mat.scale(scaleVec)
     scaledObj.recompute()
@@ -845,6 +935,12 @@ def createSphere(
         material,
         colour,
     )
+
+    for prop in ["rmin", "rmax", "startphi", "deltaphi", "starttheta", "deltatheta"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mysphere.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mysphere.Placement = GDMLShared.processPlacement(base, rot)
@@ -869,6 +965,19 @@ def createTetra(part, solid, material, colour, px, py, pz, rot, displayMode, sol
     lunit = getText(solid, "lunit", "mm")
     mytetra = newPartFeature(part, getSolidName(solid, solidName))
     GDMLTetra(mytetra, v1, v2, v3, v4, lunit, material, colour)
+
+    tetProps = ['v1', 'v2', 'v3', 'v4']
+    for i, prop in enumerate(["vertex1", "vertex2", "vertex3", "vertex4"]):
+        expressions = GDMLShared.getPositionExpressions(solid, prop)
+        if expressions[0] is not None:
+            mytetra.setExpression(f'{tetProps[i]}.x', expressions[0])
+
+        if expressions[1] is not None:
+            mytetra.setExpression(f'{tetProps[i]}.y', expressions[1])
+
+        if expressions[2] is not None:
+            mytetra.setExpression(f'{tetProps[i]}.z', expressions[2])
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytetra.Placement = GDMLShared.processPlacement(base, rot)
@@ -910,6 +1019,12 @@ def createTorus(
         material,
         colour,
     )
+
+    for prop in ["rmin", "rmax", "rtor", "startphi", "deltaphi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytorus.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytorus.Placement = GDMLShared.processPlacement(base, rot)
@@ -957,6 +1072,13 @@ def createTrap(part, solid, material, colour, px, py, pz, rot, displayMode, soli
         material,
         colour,
     )
+
+    # Our GDMLTrap does not have alpha1, alpha2, just alpha
+    for prop in ["z", "x1", "x2", "x3", "x4", "y1", "y2", "theta", "phi", "alpha"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytrap.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytrap.Placement = GDMLShared.processPlacement(base, rot)
@@ -986,6 +1108,12 @@ def createTrd(
     #    solidName = getName(solid)
     mytrd = newPartFeature(part, getSolidName(solid, solidName))
     GDMLTrd(mytrd, z, x1, x2, y1, y2, lunit, material, colour)
+
+    for prop in ["z", "x1", "x2", "y1", "y2"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytrd.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytrd.Placement = GDMLShared.processPlacement(base, rot)
@@ -1021,6 +1149,12 @@ def createTwistedbox(
 
     # print(f'Cube colour : {colour}')
     GDMLTwistedbox(mypart, angle, x, y, z, aunit, lunit, material, colour)
+
+    for prop in ["x", "y", "z", "PhiTwist"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypart.setExpression(prop, expr)
+
     GDMLShared.trace(
         "Logical Position : " + str(px) + "," + str(py) + "," + str(pz)
     )
@@ -1075,6 +1209,12 @@ def createTwistedtrap(
         material,
         colour,
     )
+
+    for prop in ["z", "x1", "x2", "x3", "x4", "y1", "y2", "Theta", "Phi", "Alph"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytrap.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytrap.Placement = GDMLShared.processPlacement(base, rot)
@@ -1106,6 +1246,12 @@ def createTwistedtrd(
     GDMLTwistedtrd(
         mytrd, angle, z, x1, x2, y1, y2, aunit, lunit, material, colour
     )
+
+    for prop in ["z", "x1", "x2", "y1", "y2", "PhiTwist"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytrd.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + ", " + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mytrd.Placement = GDMLShared.processPlacement(base, rot)
@@ -1144,6 +1290,12 @@ def createTwistedtubs(
         material,
         colour,
     )
+
+    for prop in ["zlen", "endinnerrad", "endouterrad", "twistedangle", "phi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypart.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     base = FreeCAD.Vector(px, py, pz)
     mypart.Placement = GDMLShared.processPlacement(base, rot)
@@ -1173,6 +1325,8 @@ def createXtru(part, solid, material, colour, px, py, pz, rot, displayMode, soli
     GDMLXtru(myXtru, lunit, material, colour)
     if FreeCAD.GuiUp:
         ViewProviderExtension(myXtru.ViewObject)
+
+    # TODO xtru expressions
     for vert2d in solid.findall("twoDimVertex"):
         x = GDMLShared.getVal(vert2d, "x")
         y = GDMLShared.getVal(vert2d, "y")
@@ -1238,6 +1392,12 @@ def createTube(part, solid, material, colour, px, py, pz, rot, displayMode, soli
         material,
         colour,
     )
+
+    for prop in ["rmin", "rmax", "z", "startphi", "deltaphi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytube.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     # base = FreeCAD.Vector(0, 0, 0)
     base = FreeCAD.Vector(px, py, pz)
@@ -1297,6 +1457,12 @@ def createCutTube(part, solid, material, colour, px, py, pz, rot, displayMode, s
         material,
         colour,
     )
+    for prop in ["rmin", "rmax", "z", "startphi", "deltaphi",
+                 "lowX", "lowY", "lowZ", "highX", "highY", "highZ"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mycuttube.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     # base = FreeCAD.Vector(0, 0, 0)
     base = FreeCAD.Vector(px, py, pz)
@@ -1341,6 +1507,12 @@ def createParameterisedTube(
         material,
         colour,
     )
+
+    for prop in ["InR", "OutR", "hz", "StartPhi", "DeltaPhi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mytube.setExpression(prop, expr)
+
     GDMLShared.trace("Position : " + str(px) + "," + str(py) + "," + str(pz))
     # base = FreeCAD.Vector(0, 0, 0)
     base = FreeCAD.Vector(px, py, pz)
@@ -1378,11 +1550,17 @@ def createParameterisedPolycone(
     GDMLPolycone(
         mypolycone, startphi, deltaphi, aunit, lunit, material, colour
     )
+    for prop in ["startPhi", "openPhi"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolycone.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolycone.ViewObject)
 
     # mypolycone.ViewObject.DisplayMode = "Shaded"
     GDMLShared.trace(solid.findall("zplane"))
+    # TODO expressions for zplane
     for zplane in solid.findall("zplane"):
         GDMLShared.trace(zplane)
         rmin = GDMLShared.getVal(zplane, "rmin", 0)
@@ -1440,11 +1618,18 @@ def createParameterisedPolyhedra(
         material,
         colour,
     )
+
+    for prop in ["startPhi", "openPhi", "z", "numSides"]:
+        expr = GDMLShared.getSheetExpression(solid, prop)
+        if expr is not None:
+            mypolyhedra.setExpression(prop, expr)
+
     if FreeCAD.GuiUp:
         ViewProviderExtension(mypolyhedra.ViewObject)
 
     # mypolyhedra.ViewObject.DisplayMode = "Shaded"
     GDMLShared.trace(solid.findall("zplane"))
+    # TODO zplane expressions
     for zplane in solid.findall("zplane"):
         GDMLShared.trace(zplane)
         rmin = GDMLShared.getVal(zplane, "rmin", 0)
@@ -1704,9 +1889,8 @@ def parseMultiUnion(
     return myMUobj
 
 
-def parseBoolean(
-    part, solid, objType, material, colour, px, py, pz, rot, displayMode
-):
+def parseBoolean(part, solid, objType, material, colour,
+                 px, py, pz, rot, displayMode):
     # parent,  solid,  boolean Type,
     from .GDMLObjects import ViewProvider
 
@@ -1720,15 +1904,11 @@ def parseBoolean(
         name1st = GDMLShared.getRef(solid, "first")
         base = solids.find("*[@name='%s']" % name1st)
         GDMLShared.trace("first : " + name1st)
-        # parseObject(root, base)
         name2nd = GDMLShared.getRef(solid, "second")
         tool = solids.find("*[@name='%s']" % name2nd)
         GDMLShared.trace("second : " + name2nd)
         x, y, z = GDMLShared.getPosition(solid)
-        # rot = GDMLShared.getRotFromRefs(solid)
         rotBool = GDMLShared.getRotation(solid)
-        #mybool = part.newObject(objType, solid.tag + ":" + getName(solid))
-        #print(f"Solid Name {solid} {getSolidName(solid, None)}")
         mybool = part.newObject(objType, getSolidName(solid, None))
         GDMLShared.trace("Create Base Object")
         mybool.Base = createSolid(
@@ -1741,17 +1921,18 @@ def parseBoolean(
         )
         # For some unknown reasons,  inversionof angle in processRotation
         # should not be performed for boolean Tool
-        mybool.Tool.Placement.Rotation.Angle = (
-            -mybool.Tool.Placement.Rotation.Angle
-        )
+        # mybool.Tool.Placement.Rotation.Angle = (
+        #     -mybool.Tool.Placement.Rotation.Angle
+        # )
         # Okay deal with position of boolean
         GDMLShared.trace("Boolean Position and rotation")
         GDMLShared.trace(
             "Position : " + str(px) + "," + str(py) + "," + str(pz)
         )
+        GDMLShared.setPlacement(mybool.Tool, solid, invertRotation=False)
         # base = FreeCAD.Vector(0, 0, 0)
-        base = FreeCAD.Vector(px, py, pz)
-        mybool.Placement = GDMLShared.processPlacement(base, rot)
+        # base = FreeCAD.Vector(px, py, pz)
+        # mybool.Placement = GDMLShared.processPlacement(base, rot)
         # if FreeCAD.GuiUp :
         #     ViewProvider(mybool.ViewObject)
         return mybool
@@ -2044,7 +2225,7 @@ def parsePhysVol(
             #      print('Scale not supported with FreeCAD 0.18')
 
         # This would be for Placement of Part need FC 0.19 Fix
-        part.Placement = GDMLShared.getPlacement(physVol)
+        # part.Placement = GDMLShared.getPlacement(physVol)
 
         # Hide FreeCAD Part Material
         if hasattr(part, "Material"):
@@ -2057,6 +2238,8 @@ def parsePhysVol(
                 ).CopyNumber = int(copyNum)
             except:
                 print("Copynumber not supported in FreeCAD 0.18")
+
+        GDMLShared.setPlacement(part, physVol)
 
     # GDMLShared.setTrace(False)
 
@@ -2403,15 +2586,7 @@ def processVol(importFlag, doc, vol, volDict, parent, phylvl, displayMode):
                         "App::PropertyString", "SensDet", "Base", "SensDet"
                     ).SensDet = aValue
                 if aType == "Color":
-                    # print('auxtype Color')
-                    # print(aValue)
-                    # print(aValue[1:3])
-                    # print(int(aValue[1:3],16))
                     if aValue[0] == "#":  # Hex values
-                        # colour = (int(aValue[1:3],16)/256, \
-                        #          int(aValue[3:5],16)/256, \
-                        #          int(aValue[5:7],16)/256, \
-                        #          int(aValue[7:],16)/256)
                         lav = len(aValue)
                         # print(f'Aux col len : {lav}')
                         if lav == 7:
@@ -2533,8 +2708,6 @@ def processVol(importFlag, doc, vol, volDict, parent, phylvl, displayMode):
         else:  # Just Add to structure
             volRef = GDMLShared.getRef(pv, "volumeref")
             print("volRef : " + str(volRef))
-            nx, ny, nz = GDMLShared.getPosition(pv)
-            nrot = GDMLShared.getRotation(pv)
             cpyNum = pv.get("copynumber")
             # print('copyNumber : '+str(cpyNum))
             # Is volRef already defined
@@ -2576,8 +2749,12 @@ def processVol(importFlag, doc, vol, volDict, parent, phylvl, displayMode):
                 part.addProperty(
                     "App::PropertyInteger", "CopyNumber", "GDML", "copynumber"
                 ).CopyNumber = int(cpyNum)
-            base = FreeCAD.Vector(nx, ny, nz)
-            part.Placement = GDMLShared.processPlacement(base, nrot)
+
+            GDMLShared.setPlacement(part, pv)
+            # nx, ny, nz = GDMLShared.getPosition(pv)
+            # nrot = GDMLShared.getRotation(pv)
+            # base = FreeCAD.Vector(nx, ny, nz)
+            # part.Placement = GDMLShared.processPlacement(base, nrot)
             if hasattr(part, "Material"):
                 part.setEditorMode("Material", 2)
     #
@@ -3179,6 +3356,7 @@ def processMatrixSpreadsheet(name, spreadsheet, coldim, values):
     return
 
 
+
 def processOpticals(doc, opticalsGrp, define_xml, solids_xml, struct_xml):
     from .GDMLObjects import GDMLmatrix, GDMLopticalsurface, GDMLskinsurface
 
@@ -3271,12 +3449,7 @@ def processMaterialsG4(G4rp, root):
 def processDefines(root, doc):
     GDMLShared.trace("Call set Define")
     GDMLShared.setDefine(root.find("define"))
-    GDMLShared.processConstants(doc)
-    GDMLShared.processVariables(doc)
-    GDMLShared.processQuantities(doc)
-    GDMLShared.processPositions(doc)
-    GDMLShared.processExpression(doc)
-
+    GDMLShared.processDefines(doc)
 
 def findWorldVol():
     doc = FreeCAD.ActiveDocument

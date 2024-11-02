@@ -430,7 +430,7 @@ class SetBorderSurfaceFeature:
             return
 
         # Attempt at fix need to buildDocTree ?
-        # buildTree now sets global childObjects 
+        # buildTree now sets global childObjects
         worldObj = self.getWorldVol()
         if worldObj is None:
             return
@@ -3494,7 +3494,6 @@ def expandFunction(obj, eNum):
     from .PhysVolDict import physVolDict
 
     if 'volDict' not in globals():
-        global VolDict
         volDict = physVolDict()
         volDict.reBuild()
 
