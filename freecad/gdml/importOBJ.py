@@ -233,18 +233,29 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         self.materialsList = getMaterialsList()
 
     def parseObjFile(self, filePath, buildMap=True):
+        import os
         fp = pythonopen(filePath)
         data = fp.read()
-        pattern = re.compile(r"^(?:[0g]|usemtl|o)\s.*", re.MULTILINE)
+        #pattern = re.compile(r"^(?:[0g]|usemtl|o)\s.*", re.MULTILINE)
+        pattern = re.compile(r"^(?:[0g]|usemtl)\s.*", re.MULTILINE)
         self.objMatList = pattern.findall(data)
         # Need to improve python coding
-        #print(f"obj Mat List {self.objMatList}")
+        print(f"obj Mat List {self.objMatList}")
         # State 0 - No g/o/usemtl
         # State 1 - one of g/o
         # State 2 - usemtl
         # State 3 - both g/o and usemtl
         state = 0
         objMat = "None"
+        # If only one item name is file name
+        # This is messy
+        if len(self.objMatList) <= 1:
+            fileName = os.path.basename(filePath)
+            name = os.path.splitext(fileName)[0]
+            print(f"filename {os.path.splitext(filePath)}")
+            self.objMatList = ["g "+os.path.splitext(fileName)[0]]
+            self.addMaterialMapping(name, objMat, "G4_A-150_TISSUE")
+            return
         for i in self.objMatList:
             #print(f"i {i}")
             if 'g ' in i:
