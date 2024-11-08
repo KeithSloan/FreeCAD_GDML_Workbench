@@ -440,6 +440,7 @@ class GDMLsolid:
         if hasattr(self, "Type"):
             #print(f"getstate : Type {self.Type}")
             return {"type": self.Type}
+            
         elif hasattr(self.Proxy, "Type"):
             #print(f"getstate : Type {self.Proxy.Type}")
             return {"type": self.Proxy.Type}
@@ -4158,6 +4159,9 @@ class GDMLGmshTessellated(GDMLsolid):
             "App::PropertyInteger", "numVertex", "GDMLGmshTessellated", "Vertex"
         ).numVertex = len(vertex)
         obj.setEditorMode("numVertex", 1)
+        obj.addProperty(
+            "App::PropertyLinkGlobal", "sourceObj", "GDMLGmshTessellated", "sourceObj"
+        ).sourceObj = sourceObj
         # Properties NOT the same GmshTessellate GmshMinTessellate
         #obj.addProperty(
         #    "App::PropertyFloat",
@@ -4191,7 +4195,7 @@ class GDMLGmshTessellated(GDMLsolid):
         if FreeCAD.GuiUp:
             updateColour(obj, colour, material)
         self.Type = "GDMLGmshTessellated"
-        self.SourceObj = sourceObj
+        self.meshLen = meshLen
         self.vertex = vertex
         self.facets = facets
         self.Object = obj
@@ -4319,6 +4323,24 @@ class GDMLGmshTessellated(GDMLsolid):
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement
+
+    def __getstate__(self):
+        #
+        # Change in documentation
+        #
+        # https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Scripted_objects_saving_attributes.md
+        #
+        #return self.vertex, self.facets, self.meshLen, self.colour
+        return self.vertex, self.facets, self.meshLen
+
+    def __setstate__(self, state):
+        self.vertex = state[0]
+        self.facets = state[1]
+        self.sourceObj = state[2]
+        self.meshLen = state[3]
+        self.colour = state[4]
+
+
 
 
 class GDMLTessellated(GDMLsolid):

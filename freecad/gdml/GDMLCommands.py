@@ -2503,8 +2503,11 @@ class AddMinTessellateTask:
     def processMesh(self, vertex, facets):
         from .GDMLObjects import ViewProvider
 
-        print("Update Tessellated Object Operation Type {self.operationType}")
-        #print(dir(self))
+        print(f"Update Tessellated Object Operation Type {self.operationType}")
+        # Operation Types
+        #   1 Mesh      - Object or GDML Object
+        #   2 reMesh    - Object or GDML Object
+        #   3 reMesh    - GmshTessellate or Tessellated#print(dir(self))
         #print("Object Name " + self.obj.Name)
         print("Object Name " + self.obj.Label)
         print("Object Type " + self.obj.TypeId)
@@ -2570,10 +2573,10 @@ class AddMinTessellateTask:
                 setLengthQuantity
 
         #print("Action Min Gmsh : " + self.obj.Name)
-        print("Action Min Gmsh : " + self.obj.Label)
+        print(f"Action Min Gmsh : {self.obj.Label}")
         initialize()
         #print("Object " + self.obj.Name)
-        print("Object " + self.obj.Label)
+        print(f"Object {self.obj.Label}")
         self.operationType = 1
         obj2Mesh = self.obj
         self.tess = None
@@ -2590,15 +2593,16 @@ class AddMinTessellateTask:
             # Is this a remesh of GDMLGmshTessellated
             if hasattr(self.obj.Proxy, "Type"):
                 if self.obj.Proxy.Type == "GDMLGmshTessellated":
-                    if hasattr(self.obj.Proxy, "SourceObj"):
+                    if hasattr(self.obj.Proxy, "sourceObj"):
                         print("Has source Object - ReMesh")
-                        obj2Mesh = self.obj.Proxy.SourceObj
+                        obj2Mesh = self.obj.Proxy.sourceObj
                     self.operationType = 3    
         if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
-            print("get facets and vertex")
+            print("minMesh get facets and vertex")
             self.facets = getFacets()
             self.vertex = getVertex()
             if not hasattr(obj2Mesh, "tessellated"):
+                print(f"New Gmsh")
                 #name = "GDMLTessellate_" + self.obj.Name
                 name = "GDMLTessellate_" + self.obj.Label
                 parent = None
@@ -2612,6 +2616,7 @@ class AddMinTessellateTask:
                         else:    
                             self.tess = FreeCAD.ActiveDocument.addObject(
                                 "Part::FeaturePython", name)
+                    print(f"Create Gmsh Tessellated Object")        
                     GDMLGmshTessellated( self.tess, self.obj,
                          getMeshLen(self.obj), self.vertex, self.facets,
                         "mm", getSelectedMaterial())
@@ -2641,8 +2646,8 @@ class AddMinTessellateTask:
                 self.obj.tessellated.surfaceDev = float(surfaceDev)
                 self.obj.tessellated.angularDev = float(angularDev)
             elif self.operationType == 1:
-                FreeCADGui.Selection.clearSelection()
-                FreeCADGui.Selection.addSelection(self.tess)
+               FreeCADGui.Selection.clearSelection()
+               FreeCADGui.Selection.addSelection(self.tess)
             
 
     def leaveEvent(self, event):
