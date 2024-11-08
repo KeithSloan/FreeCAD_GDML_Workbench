@@ -2500,10 +2500,11 @@ class AddMinTessellateTask:
     def isAllowedAlterDocument(self):
         return True
 
-    def processMesh(self, vertex, facets):
+    def postProcessMesh(self, vertex, facets, actionType):
         from .GDMLObjects import ViewProvider
 
         print(f"Update Tessellated Object Operation Type {self.operationType}")
+        # actionType
         # Operation Types
         #   1 Mesh      - Object or GDML Object
         #   2 reMesh    - Object or GDML Object
@@ -2511,25 +2512,13 @@ class AddMinTessellateTask:
         #print("Object Name " + self.obj.Name)
         print("Object Name " + self.obj.Label)
         print("Object Type " + self.obj.TypeId)
-        if hasattr(self.obj, "Proxy"):
-            print("Proxy")
-            if hasattr(self.obj.Proxy, "Type"):
-                print(self.obj.Proxy.Type)
-                if ( self.obj.Proxy.Type == "GDMLGmshTessellated"
-                    or self.obj.Proxy.Type == "GDMLTessellated"):
-                    self.tess = self.obj.Proxy
-                    #self.tess = self.obj
-                    self.obj.Proxy.updateParams(vertex, facets, False)
-        # print(dir(self.form))
-        print("Vertex : " + str(len(vertex)))
-        print("Facets : " + str(len(facets)))
-        # Update Info of GDML Tessellated Object
-        self.tess = None
-        if hasattr(self.obj, "tessellated"):
-            if self.obj.tessellated is not None:
+        while switch(actionType):
+            if case(1):
+                #if hasattr(self.obj, "tessellated"):
+                # if self.obj.tessellated is not None:
                 self.tess = self.obj.tessellated
-                #print("Tessellated Name " + self.tess.Name)
-                #print("Update parms : " + self.tess.Name)
+                print("Tessellated Name " + self.tess.Name)
+                print("Update parms : " + self.tess.Name)
                 print("Tessellated Name " + self.tess.Label)
                 print("Update parms : " + self.tess.Label)
                 if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
@@ -2537,8 +2526,38 @@ class AddMinTessellateTask:
                     self.tess.Proxy.updateParams(vertex, facets, False)
                 else:
                     self.tess.updateParams(vertex, facets, False)
-            # print('Update parms : '+self.tess.Name)
-            # self.tess.updateParams(vertex,facets,False)
+
+            if case(2):
+                if self.obj.tessellated is not None:
+                    self.tess = self.obj.tessellated
+                    #print("Tessellated Name " + self.tess.Name)
+                    #print("Update parms : " + self.tess.Name)
+                    print("Tessellated Name " + self.tess.Label)
+                    print("Update parms : " + self.tess.Label)
+                    if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
+                    #print(dir(self.tess.Proxy))
+                    #print(dir(self.tess.Proxy))
+                #    self.tess.Proxy.updateParams(vertex, facets, False)
+                #else:
+                #    self.tess.updateParams(vertex, facets, False)
+                # print('Update parms : '+self.tess.Name)
+
+            if case(3):
+                if hasattr(self.obj, "Proxy"):
+                print("Proxy")
+                    if hasattr(self.obj.Proxy, "Type"):
+                        print(self.obj.Proxy.Type)
+                        if ( self.obj.Proxy.Type == "GDMLGmshTessellated"
+                            or self.obj.Proxy.Type == "GDMLTessellated"):
+                            self.tess = self.obj.Proxy
+                            #self.tess = self.obj
+                            self.obj.Proxy.updateParams(vertex, facets, False)
+                            # print(dir(self.form))
+                            print("Vertex : " + str(len(vertex)))
+                            print("Facets : " + str(len(facets)))
+                            # Update Info of GDML Tessellated Object
+                            #self.tess = None
+
         self.form.Vertex.value.setText(str(len(vertex)))
         self.form.Facets.value.setText(str(len(facets)))
 
@@ -2559,7 +2578,12 @@ class AddMinTessellateTask:
             FreeCADGui.SendMsgToActiveView("ViewFit")
             FreeCADGui.updateGui()
 
-    def actionMesh(self):
+    def actionMesh(self):       # Gmsh actionMesh
+        # Could be one of the following
+        # 1 - Gmsh of Object or GDML Object
+        # 2 - Re Gmsh of Object or GDML Object
+        # 3 - Re Gmsh of selected GmshTessellated or Tessellated Object
+
         from .GmshUtils import (
             minMeshObject,
             getVertex,
@@ -2580,12 +2604,15 @@ class AddMinTessellateTask:
         self.operationType = 1
         obj2Mesh = self.obj
         self.tess = None
+        surfaceDev = self.form.surfaceDeviation.value.text()
+        angularDev = self.form.angularDeviation.value.text()
+        # Test if action is 2 Re Gmsh of Object or GDML Object
         if hasattr(self.obj, 'tessellated'):
             if self.obj.tessellated is not None:
                 self.tess = self.obj.tessellated
                 self.operationType = 2
-        surfaceDev = self.form.surfaceDeviation.value.text()
-        angularDev = self.form.angularDeviation.value.text()
+        # Test if action is 3 Re Gmsh of selected
+        #      GmshTessellated or Tessellated Object        
         if hasattr(self.obj, "Proxy"):
             print(f"Has proxy {self.obj.Proxy}")
             #print(dir(self.obj.Proxy))
@@ -2596,12 +2623,13 @@ class AddMinTessellateTask:
                     if hasattr(self.obj.Proxy, "sourceObj"):
                         print("Has source Object - ReMesh")
                         obj2Mesh = self.obj.Proxy.sourceObj
-                    self.operationType = 3    
+                    self.operationType = 3
+        # Perform Gmsh Min                
         if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
             print("minMesh get facets and vertex")
             self.facets = getFacets()
             self.vertex = getVertex()
-            if not hasattr(obj2Mesh, "tessellated"):
+            if self.operationType == 1:
                 print(f"New Gmsh")
                 #name = "GDMLTessellate_" + self.obj.Name
                 name = "GDMLTessellate_" + self.obj.Label
@@ -2637,17 +2665,17 @@ class AddMinTessellateTask:
                     self.obj.tessellated = self.tess
             #else:
             #    self.processMesh(self.vertex, self.facets)
-            self.processMesh(self.vertex, self.facets)
+            self.postProcessMesh(self.vertex, self.facets, self.operationType)
             print(f"MinMsh Operation {self.operationType}")
-            if self.operationType == 3:
-                self.obj.surfaceDev = float(surfaceDev)
-                self.obj.angularDev = float(angularDev)
-            elif self.operationType == 2:
-                self.obj.tessellated.surfaceDev = float(surfaceDev)
-                self.obj.tessellated.angularDev = float(angularDev)
-            elif self.operationType == 1:
-               FreeCADGui.Selection.clearSelection()
-               FreeCADGui.Selection.addSelection(self.tess)
+            #if self.operationType == 3:
+            #    self.obj.surfaceDev = float(surfaceDev)
+            #    self.obj.angularDev = float(angularDev)
+            #elif self.operationType == 2:
+            #    self.obj.tessellated.surfaceDev = float(surfaceDev)
+            #    self.obj.tessellated.angularDev = float(angularDev)
+            #elif self.operationType == 1:
+            #   FreeCADGui.Selection.clearSelection()
+            #   FreeCADGui.Selection.addSelection(self.tess)
             
 
     def leaveEvent(self, event):
