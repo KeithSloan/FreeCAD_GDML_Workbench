@@ -2497,6 +2497,7 @@ class AddMinTessellateTask:
                 #print("Update parms : " + self.tess.Name)
                 #print("Tessellated Name " + self.tess.Label)
                 #print("Update parms : " + self.tess.Label)
+                # Need to update Dialog with details from Gmsh
                 #if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
                 #    #print(dir(self.tess.Proxy))
                 #    self.tess.Proxy.updateParams(vertex, facets, False)
@@ -2536,8 +2537,10 @@ class AddMinTessellateTask:
                             # Update Info of GDML Tessellated Object
                             #self.tess = None
 
+        # Update Panel with results from Gmsh
         #self.form.Vertex.value.setText(str(len(vertex)))
         #self.form.Facets.value.setText(str(len(facets)))
+        return
 
         if FreeCAD.GuiUp:
             if self.operationType in [1, 2]:
