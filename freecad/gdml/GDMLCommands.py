@@ -59,40 +59,16 @@ if FreeCAD.GuiUp:
             return QtGui.QApplication.translate(context, text, None)
 
 
-class importPrompt(QtGui.QDialog):
-    def __init__(self, *args):
-        super(importPrompt, self).__init__()
-        self.initUI()
+class switch(object):
+    value = None
 
-    def initUI(self):
-        importButton = QtGui.QPushButton("Import")
-        importButton.clicked.connect(self.onImport)
-        scanButton = QtGui.QPushButton("Scan Vol")
-        scanButton.clicked.connect(self.onScan)
-        #
-        buttonBox = QtGui.QDialogButtonBox()
-        buttonBox.setFixedWidth(400)
-        # buttonBox = Qt.QDialogButtonBox(QtCore.Qt.Vertical)
-        buttonBox.addButton(importButton, QtGui.QDialogButtonBox.ActionRole)
-        buttonBox.addButton(scanButton, QtGui.QDialogButtonBox.ActionRole)
-        #
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(buttonBox)
-        self.setLayout(mainLayout)
-        # self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-        # define window xLoc,yLoc,xDim,yDim
-        self.setGeometry(650, 650, 0, 50)
-        self.setWindowTitle("Choose an Option    ")
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        self.retStatus = 0
+    def __new__(class_, value):
+        class_.value = value
+        return True
 
-    def onImport(self):
-        self.retStatus = 1
-        self.close()
 
-    def onScan(self):
-        self.retStatus = 2
-        self.close()
+def case(*args):
+    return any((arg == switch.value for arg in args))
 
 
 def getSelectedMaterial():
@@ -2516,16 +2492,18 @@ class AddMinTessellateTask:
             if case(1):
                 #if hasattr(self.obj, "tessellated"):
                 # if self.obj.tessellated is not None:
-                self.tess = self.obj.tessellated
-                print("Tessellated Name " + self.tess.Name)
-                print("Update parms : " + self.tess.Name)
-                print("Tessellated Name " + self.tess.Label)
-                print("Update parms : " + self.tess.Label)
-                if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
-                    #print(dir(self.tess.Proxy))
-                    self.tess.Proxy.updateParams(vertex, facets, False)
-                else:
-                    self.tess.updateParams(vertex, facets, False)
+                #self.tess = self.obj.tessellated
+                #print("Tessellated Name " + self.tess.Name)
+                #print("Update parms : " + self.tess.Name)
+                #print("Tessellated Name " + self.tess.Label)
+                #print("Update parms : " + self.tess.Label)
+                #if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
+                #    #print(dir(self.tess.Proxy))
+                #    self.tess.Proxy.updateParams(vertex, facets, False)
+                #else:
+                #    self.tess.updateParams(vertex, facets, False)
+                return
+                pass
 
             if case(2):
                 if self.obj.tessellated is not None:
@@ -2534,7 +2512,7 @@ class AddMinTessellateTask:
                     #print("Update parms : " + self.tess.Name)
                     print("Tessellated Name " + self.tess.Label)
                     print("Update parms : " + self.tess.Label)
-                    if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
+                    #if hasattr(self.tess, "Proxy"):  # If GDML object has Proxy
                     #print(dir(self.tess.Proxy))
                     #print(dir(self.tess.Proxy))
                 #    self.tess.Proxy.updateParams(vertex, facets, False)
@@ -2544,7 +2522,7 @@ class AddMinTessellateTask:
 
             if case(3):
                 if hasattr(self.obj, "Proxy"):
-                print("Proxy")
+                    print("Proxy")
                     if hasattr(self.obj.Proxy, "Type"):
                         print(self.obj.Proxy.Type)
                         if ( self.obj.Proxy.Type == "GDMLGmshTessellated"
@@ -2558,8 +2536,8 @@ class AddMinTessellateTask:
                             # Update Info of GDML Tessellated Object
                             #self.tess = None
 
-        self.form.Vertex.value.setText(str(len(vertex)))
-        self.form.Facets.value.setText(str(len(facets)))
+        #self.form.Vertex.value.setText(str(len(vertex)))
+        #self.form.Facets.value.setText(str(len(facets)))
 
         if FreeCAD.GuiUp:
             if self.operationType in [1, 2]:
@@ -2661,8 +2639,8 @@ class AddMinTessellateTask:
                     self.tess.surfaceDev = float(surfaceDev)
                     self.tess.angularDev = float(angularDev)
                     # Indicate that Object has been Tessellated
-                    self.obj.addProperty("App::PropertyLinkGlobal","tessellated","Base")
-                    self.obj.tessellated = self.tess
+                    #self.obj.addProperty("App::PropertyLinkGlobal","tessellated","Base")
+                    #self.obj.tessellated = self.tess
             #else:
             #    self.processMesh(self.vertex, self.facets)
             self.postProcessMesh(self.vertex, self.facets, self.operationType)
