@@ -122,8 +122,10 @@ def processMTL(doc, filePath):
                 key, *values = line.split()
                 value_str = ' '.join(values)
 
-                if key in ["Ka", "Kd", "Ks", "Tf"]:
+                if key in ["Ka", "Kd", "Ks"]:
                     material_data[key] = tuple(map(float, value_str.split()))
+                elif key in ["Tf"]:
+                    material_data[key] = tuple(map(int, value_str.split()))
                 elif key in ["Ns", "d", "Tr", "illum"]:
                     material_data[key] = float(value_str) if '.' in value_str else int(value_str)
 
