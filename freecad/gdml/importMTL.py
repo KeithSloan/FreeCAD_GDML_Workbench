@@ -92,7 +92,7 @@ def processMTL(doc, filePath):
     sheetName = os.path.splitext(fileName)[0]
     # Create a new spreadsheet in the document
     spreadsheet = doc.addObject("Spreadsheet::Sheet", sheetName)
-    spreadsheet.Label = sheetName +" MTL - Materials"
+    spreadsheet.Label = sheetName +"_MTL_Materials"
     materialsGrp = doc.getObject("Materials")
     if materialsGrp is not None:
         materialsGrp.addObject(spreadsheet)
