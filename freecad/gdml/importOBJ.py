@@ -190,11 +190,13 @@ class MaterialMapList(QtGui.QScrollArea):
 
 
 class MapObjmat2GDMLmatDialog(QtGui.QDialog):
-    def __init__(self, *args):
+    def __init__(self, doc, *args):
         super(MapObjmat2GDMLmatDialog, self).__init__()
         self.setupUi()
         #self.initUI()
+        self.doc = doc
         self.objMatDict = {}
+        self.mtlFile = None
 
     def initUI(self):
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
@@ -232,10 +234,49 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         from .GDMLMaterials import getMaterialsList, GDMLMaterial
         self.materialsList = getMaterialsList()
 
+
+    def moveMTL2Materials(self):
+        import FreeCADGui
+        self.doc.recompute()
+        print(f"Move MTFfile {self.mtlFile} to Materials")
+        #doc = FreeCADGui.ActiveDocument
+        #print(doc)
+        matGrp = self.doc.getObject("Materials")
+        print(f"Mat Grp {matGrp}")
+        if matGrp is not None:
+            if self.mtlFile is not None:
+                #sheetName = self.mtlFile.split(".")[0]+"_MTL_Materials"
+                sheetName = self.mtlFile.split(".")[0]
+                sheetName = "test_entire_obj_mtl"
+                print(f"Sheet Name {sheetName}")
+                mtlObj  = self.doc.getObject(sheetName)
+                print(f"mtlObj {mtlObj}")
+                matGrp.addObject(mtlObj)
+                self.doc.recompute()
+
+
+    def importMTL(self, filePath, mtlFile):
+        import os
+        from freecad.gdml.importMTL import processMTL
+        print(f"import MTL file {mtlFile}")
+        directory = os.path.dirname(filePath)
+        mtlPath = os.path.join(directory, mtlFile)
+        processMTL(self.doc, mtlPath)
+
+
     def parseObjFile(self, filePath, buildMap=True):
         import os
         fp = pythonopen(filePath)
         data = fp.read()
+        lines = data.splitlines()
+        for line in lines:
+            line.strip()
+            if line.startswith('mtllib'):
+                mtlFile = line.split(maxsplit=1)[1]
+                print(f"mtllib {mtlFile}")
+                self.importMTL(filePath, mtlFile)
+                break
+
         #pattern = re.compile(r"^(?:[0g]|usemtl|o)\s.*", re.MULTILINE)
         pattern = re.compile(r"^(?:[0g]|usemtl)\s.*", re.MULTILINE)
         self.objMatList = pattern.findall(data)
@@ -449,6 +490,7 @@ def getFileName(filePath):
     from pathlib import Path
     return(Path(filePath).stem)
 
+
 def processOBJ(doc, filePath):
 
     import FreeCADGui, Mesh, re, os
@@ -462,7 +504,7 @@ def processOBJ(doc, filePath):
     checkMaterialDefinitionsExist()
     print("import OBJ as FC meshes")
     startTime = datetime.now()
-    mapDialog = MapObjmat2GDMLmatDialog()
+    mapDialog = MapObjmat2GDMLmatDialog(doc)
     #mapDialog.initMaterials()
     #mapDialog.exec_()
     #return
@@ -487,6 +529,8 @@ def processOBJ(doc, filePath):
     else:
         matMap = False
     mapDialog.processMappingDict(matMap, doc, getFileName(filePath), Material)
+    doc.recompute()
+    #mapDialog.moveMTL2Materials()
     FreeCADGui.setActiveDocument(doc)
     FreeCAD.ActiveDocument.recompute()
     if FreeCAD.GuiUp:
