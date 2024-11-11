@@ -542,9 +542,6 @@ def processOBJ(doc, filePath):
     print("import OBJ as FC meshes")
     startTime = datetime.now()
     mapDialog = MapObjmat2GDMLmatDialog(doc)
-    #mapDialog.initMaterials()
-    #mapDialog.exec_()
-    #return
     # Preprocess file collecting Object and Material definitions
     mapDialog.parseObjFile(filePath)
     #print(f"Obj Dict {objDict}")
@@ -560,9 +557,13 @@ def processOBJ(doc, filePath):
     print(f"====> Selected Material {Material}")
     if Material is None:
         matMap = True
+        # As Advised by wmayer to avoid spinning cursor
+        QtGui.QGuiApplication.setOverrideCursor(QtGui.Qt.ArrowCursor)
         mapDialog.initUI()
         mapDialog.exec_()
         #preTime = datetime.now()
+        # As Advised by wmayer to avoid spinning cursor
+        QtGui.QGuiApplication.restoreOverrideCursor()
     else:
         matMap = False
     mapDialog.processMappingDict(matMap, doc, getFileName(filePath), Material)
