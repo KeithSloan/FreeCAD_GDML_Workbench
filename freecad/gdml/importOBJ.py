@@ -106,6 +106,7 @@ class ColourWidget(QtGui.QLineEdit):
         # self.setFlat(True)
         self.update()
 
+
 class TextWidget(QtGui.QLineEdit):
 
     def __init__(self, text):
@@ -155,8 +156,9 @@ class MapMaterialObj2GDML(QtGui.QWidget):
 
 class MaterialMapList(QtGui.QScrollArea):
 
-    def __init__(self):
+    def __init__(self, objMtlDict):
         super().__init__()
+        self.objMtlDict = objMtlDict
         from .GDMLMaterials import getMaterialsList
         # Scroll Area which contains the widgets, set as the centralWidget
         # Widget that contains the collection of Vertical Box
@@ -174,12 +176,31 @@ class MaterialMapList(QtGui.QScrollArea):
         self.setWidget(self.widget)
         self.NameMatWdgDict = {}
 
-    def addEntry(self, objName, objMat, gdmlMat, colour):
+
+    def getMatColour(self, objMat):
+        from PySide2.QtGui import QColor  # Use PySide2, or PyQt5.QtGui for PyQt5
+
+        print(f"objMtlDict {self.objMtlDict}")
+        print(f"objMat {objMat} {self.objMtlDict[objMat]}")
+        mtlDict = self.objMtlDict[objMat]
+        Ka = mtlDict["Ka"]
+        # Variable with RGB values as a tuple
+        print(f"Ka {Ka}")
+        # Convert values to the 0-255 range expected by QColor
+        r, g, b = [int(x * 255) for x in Ka]
+        # Return QColor object
+        # color = QColor(r, g, b)
+        return QColor(r, g, b)
+
+
+    def addEntry(self, objName, objMat, gdmlMat):
         from .GDMLMaterials import GDMLMaterial
         #print('Add Entry')
+        colour = self.getMatColour(objMat)
         matWidget = GDMLMaterial(self.matList, gdmlMat)
         self.NameMatWdgDict[objName] = matWidget
         self.vbox.addWidget(MapMaterialObj2GDML(objName, objMat,  matWidget, colour))
+
 
     def getMaterial4Name(self, objName):
         print(f"getMaterial4Name {objName}")
@@ -195,15 +216,20 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         self.setupUi()
         #self.initUI()
         self.doc = doc
-        self.objMatDict = {}
         self.mtlFile = None
+
 
     def initUI(self):
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setMouseTracking(True)
         self.show()
 
+
     def setupUi(self):
+        # Dict objMat Name lookup by Obj Name
+        self.nameMatDict = {}
+        # Dict mtl defintions for objMat Name
+        self.objMtlDict = {}
         self.setObjectName("Dialog")
         self.resize(400, 462)
         mainLayout = QtGui.QVBoxLayout()
@@ -216,7 +242,7 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         self.buttonBox.setObjectName("buttonBox")
         self.buttonBox.accepted.connect(self.action)
         self.buttonBox.rejected.connect(self.onCancel)
-        self.mapList = MaterialMapList()
+        self.mapList = MaterialMapList(self.objMtlDict)
         self.mapLayout = QtGui.QVBoxLayout()
         self.mapLayout.addWidget(self.mapList)
         self.headings = Headings()
@@ -227,8 +253,8 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         self.setGeometry(30, 30, 800, 350)
         self.setWindowTitle("Map Materials Obj -> GDML")
         #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        self.nameMatDict = {}
         self.retStatus = 0
+
 
     def initMaterials(self):
         from .GDMLMaterials import getMaterialsList, GDMLMaterial
@@ -261,7 +287,8 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         print(f"import MTL file {mtlFile}")
         directory = os.path.dirname(filePath)
         mtlPath = os.path.join(directory, mtlFile)
-        processMTL(self.doc, mtlPath)
+        processMTL(self.doc, mtlPath, matDict=self.objMtlDict)
+        print(f"objMtlDict {self.objMtlDict}")
 
 
     def parseObjFile(self, filePath, buildMap=True):
@@ -297,6 +324,7 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
             self.objMatList = ["g "+os.path.splitext(fileName)[0]]
             self.addMaterialMapping(name, objMat, "G4_A-150_TISSUE")
             return
+
         for i in self.objMatList:
             #print(f"i {i}")
             if 'g ' in i:
@@ -325,11 +353,13 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
                     if buildMap:
                         self.addMaterialMapping(name, objMat, "G4_A-150_TISSUE")
 
+
     def addMaterialMapping(self, name, objMat, gdmlMat):
         #print(f"Add Material Map Obj {name} Material {objMat} to GDML mat {gdmlMat}")        
-        self.mapList.addEntry(name, objMat, gdmlMat, None)
+        self.mapList.addEntry(name, objMat, gdmlMat)
         self.nameMatDict[name] = gdmlMat
         #self.objMatGDMLmat[objMat] = gdmlMat
+
 
     def getObjGDMLmaterial(self, objMat):
         cb = self.objMatGDMLmat[objMat]
@@ -341,11 +371,13 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         Material = self.mapList.getMaterial4Name(name)
         return Material
 
+
     def findRootPart(self, doc):
         for obj in doc.RootObjects:
             if obj.TypeId == "App::Part":
                 return obj
         return None       
+
 
     def processMappingDict(self, matMap, doc, fileName,  Material="G4_A-150_TISSUE"):
         from .GDMLObjects import setMaterial, updateColour, colorFromRay, setTransparency, setLengthQuantity
@@ -393,6 +425,7 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
               else:
                 print(f"Not found label{label} name {name}")
 
+
     def fullDisplayRadioButtonToggled(self):
         self.fullDisplayRadioButton.blockSignals(True)
 
@@ -409,15 +442,18 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
 
         self.fullDisplayRadioButton.blockSignals(False)
 
+
     def action(self):
         print(f"Map Materials")
         self.MapMaterials = True
         self.accept()
 
+
     def onCancel(self):
         print(f"reject")
         self.MapMaterials = False
         self.reject()
+
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate

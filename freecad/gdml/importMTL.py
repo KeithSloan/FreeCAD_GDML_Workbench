@@ -85,9 +85,10 @@ def insert(filePath, docname):
         processMTL(doc, filePath)
 
 
-def processMTL(doc, filePath):
+def processMTL(doc, filePath, matDict=None):
     import os, Spreadsheet
 
+    print(f"process MTL matDict {matDict}")
     fileName = os.path.basename(filePath)
     sheetName = os.path.splitext(fileName)[0]
     # Create a new spreadsheet in the document
@@ -132,7 +133,13 @@ def processMTL(doc, filePath):
         # Save the last material data if present
         if current_material:
             data[current_material] = material_data
-    
+
+    # Populate matDict if supplied
+    if matDict is not None:
+        for mat_name, mat_props in data.items():
+            matDict[mat_name] = mat_props
+        print(f"Map Dict {matDict}")
+
     # Populate the spreadsheet
     row = 2  # Start from row 2 (row 1 can be headers if needed)
     for mat_name, mat_props in data.items():
