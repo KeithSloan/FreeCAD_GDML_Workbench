@@ -351,9 +351,10 @@ def updateColour(obj, colour, material):
     if colour is None:
         colour = colourMaterial(material)
     obj.ViewObject.ShapeColor = colour
-    # print(f'Colour {colour}')
+    #print(f'Colour {colour}')
     if colour is not None:
-        obj.ViewObject.Transparency = int(colour[3] * 100)
+        #obj.ViewObject.Transparency = int(colour[3] * 100)
+        obj.ViewObject.Transparency = int(colour[2] * 100)
 
 
 def setTransparency(obj, value=70):

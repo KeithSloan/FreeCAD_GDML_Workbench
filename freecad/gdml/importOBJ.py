@@ -176,17 +176,18 @@ class MaterialMapList(QtGui.QScrollArea):
         self.setWidgetResizable(True)
         self.setWidget(self.widget)
         self.NameMatWdgDict = {}
+        self.NameColourDict = {}
 
 
     def getMatColour(self, objMat):
         from PySide2.QtGui import QColor  # Use PySide2, or PyQt5.QtGui for PyQt5
 
-        print(f"objMtlDict {self.objMtlDict}")
-        print(f"objMat {objMat} {self.objMtlDict[objMat]}")
+        #print(f"objMtlDict {self.objMtlDict}")
+        #print(f"objMat {objMat} {self.objMtlDict[objMat]}")
         mtlDict = self.objMtlDict[objMat]
         Ka = mtlDict["Ka"]
         # Variable with RGB values as a tuple
-        print(f"Ka {Ka}")
+        # print(f"Ka {Ka}")
         # Convert values to the 0-255 range expected by QColor
         r, g, b = [int(x * 255) for x in Ka]
         # Return QColor object
@@ -200,15 +201,23 @@ class MaterialMapList(QtGui.QScrollArea):
         colour = self.getMatColour(objMat)
         matWidget = GDMLMaterial(self.matList, gdmlMat)
         self.NameMatWdgDict[objName] = matWidget
+        self.NameColourDict[objName] = colour
         self.vbox.addWidget(MapMaterialObj2GDML(objName, objMat,  matWidget, colour))
 
 
-    def getMaterial4Name(self, objName):
-        print(f"getMaterial4Name {objName}")
+    def getColourMaterial4Name(self, objName):
+        print(f"getColourMaterial4Name {objName}")
         entry = self.NameMatWdgDict[objName]
+        qtColor = self.NameColourDict[objName]
+        fcColour = (
+            qtColor.red() / 255.0,
+            qtColor.green() / 255.0,
+            qtColor.blue() / 255.0
+            )
+        #vcColour = FreeCAD.Vector(*fcColour)
         #print(f"Entry {entry} {entry.getItem()}")
         Material = entry.getItem()
-        return Material
+        return fcColour, Material
 
 
 class MapObjmat2GDMLmatDialog(QtGui.QDialog):
@@ -289,7 +298,7 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         directory = os.path.dirname(filePath)
         mtlPath = os.path.join(directory, mtlFile)
         processMTL(self.doc, mtlPath, matDict=self.objMtlDict)
-        print(f"objMtlDict {self.objMtlDict}")
+        #print(f"objMtlDict {self.objMtlDict}")
 
 
     def parseObjFile(self, filePath, buildMap=True):
@@ -303,13 +312,13 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
                 mtlFile = line.split(maxsplit=1)[1]
                 print(f"mtllib {mtlFile}")
                 self.importMTL(filePath, mtlFile)
-                break
+                br:eak
 
         #pattern = re.compile(r"^(?:[0g]|usemtl|o)\s.*", re.MULTILINE)
         pattern = re.compile(r"^(?:[0g]|usemtl)\s.*", re.MULTILINE)
         self.objMatList = pattern.findall(data)
         # Need to improve python coding
-        print(f"obj Mat List {self.objMatList}")
+        # print(f"obj Mat List {self.objMatList}")
         # State 0 - No g/o/usemtl
         # State 1 - one of g/o
         # State 2 - usemtl
@@ -367,10 +376,10 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         return cb.getItem()
 
 
-    def getMaterial4Name(self, name):
-        print(f"Get Material for Name {name}")
-        Material = self.mapList.getMaterial4Name(name)
-        return Material
+    def getColourMaterial4Name(self, name):
+        #print(f"Get Material for Name {name}")
+        colour, Material = self.mapList.getColourMaterial4Name(name)
+        return colour, Material
 
 
     def findRootPart(self, doc):
@@ -381,8 +390,9 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
 
 
     def processMappingDict(self, matMap, doc, fileName,  Material="G4_A-150_TISSUE"):
-        from .GDMLObjects import setMaterial, updateColour, colorFromRay, setTransparency, setLengthQuantity
-        import random
+        #from .GDMLObjects import setMaterial, updateColour, colorFromRay, setTransparency, setLengthQuantity
+        from .GDMLObjects import setMaterial, setTransparency, setLengthQuantity
+        #import random
 
         #print(f"Processing Mapping Dict doc {doc.Name} fileName {fileName}")
         print(f"Processing Mapping Dict : matMap {matMap} Material {Material}")
@@ -406,7 +416,7 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
               if obj is not None:
                 partObj.addObject(obj)
                 if matMap:
-                    Material = self.getMaterial4Name(label)
+                    colour, Material = self.getColourMaterial4Name(label)
                 if obj is not None:    
                      obj.addProperty(
                             "App::PropertyEnumeration",
@@ -416,9 +426,11 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
                     )
                 print(f" Name {label} Material {Material}") 
                 setMaterial(obj, Material)
+                # updateColour(obj, colour, None)
                 # Random Colour  now
-                updateColour(obj, colorFromRay(random.random()), Material)
-                setTransparency(obj)
+                # updateColour(obj, colorFromRay(random.random()), Material)
+                obj.ViewObject.ShapeColor = colour
+                setTransparency(obj, 30)
                 obj.addProperty("App::PropertyEnumeration", "lunit", \
                                 "GDMLMesh", "lunit")
                 setLengthQuantity(obj, "mm")
