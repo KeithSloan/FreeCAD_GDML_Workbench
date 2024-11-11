@@ -130,6 +130,7 @@ class Headings(QtGui.QScrollArea):
         #self.setVerticalScrollBarPolicy(QtGui.QSizePolicy.setHorizontalPolicy.Fixed)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         #self.setWidgetResizable(True)
+        self.setFixedHeight(80)
         self.setWidgetResizable(False)
         self.setWidget(self.widget)
         self.hbox = QtGui.QHBoxLayout()
