@@ -419,6 +419,9 @@ class GDMLsolid:
                         return  # Let Placement default to 0
         # obj.setEditorMode('Placement', 2)
 
+    def getType(self):
+        return self.Name    
+
     def getMaterial(self):
         return self.obj.material
 
@@ -437,18 +440,34 @@ class GDMLsolid:
         Since we have some un-serializable parts here -- the Coin stuff --
         we must define this method\
         to return a tuple of all serializable objects or None."""
+        print(f"getstate {self}")
+        print(dir(self))
         if hasattr(self, "Type"):
             #print(f"getstate : Type {self.Type}")
             return {"type": self.Type}
-            
-        elif hasattr(self.Proxy, "Type"):
-            #print(f"getstate : Type {self.Proxy.Type}")
-            return {"type": self.Proxy.Type}
+
+        elif hasattr(self, "Proxy"):    
+            if hasattr(self.Proxy, "Type"):
+                #print(f"getstate : Type {self.Proxy.Type}")
+                return {"type": self.Proxy.Type}
 
         else:
             print(f"Error GDMLsolid should have Type")
-            #print(f" self {self}")
-            pass
+            #print(f"Type {self.getType()}")
+            #print(f" self {self.__str__}")
+            # Try to recover Type
+            #sSelf = str(self)
+            #sSelf = self.__str__()
+            #sSelf = self.__class__,__name__
+            #objType = sSelf.split(sSelf('.',1))
+            #print(f"sSelf {sSelf}")
+            #print(f"sSelf type {type(sSelf)}")
+            #print(f"sSelf tuple {sSelf[0]} {sSelf[1]}")
+            #print(f"sSelf type {type(sSelf[1])}")
+            name = type(self).__name__
+            print(f"name {name} type {type(name)}")
+            return {"type": name}
+
 
     def __setstate__(self, arg):
         """When restoring the serialized object from document we have the
@@ -4331,6 +4350,7 @@ class GDMLGmshTessellated(GDMLsolid):
         # https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Scripted_objects_saving_attributes.md
         #
         #return self.vertex, self.facets, self.meshLen, self.colour
+        print(f"types {type(self.vertex)}")
         return self.vertex, self.facets, self.meshLen
 
     def __setstate__(self, state):

@@ -2488,8 +2488,9 @@ class AddMinTessellateTask:
         #print("Object Name " + self.obj.Name)
         print("Object Name " + self.obj.Label)
         print("Object Type " + self.obj.TypeId)
-        while switch(actionType):
-            if case(1):
+        #while switch(actionType):
+        #    if case(1):
+        if actionType == 1:
                 #if hasattr(self.obj, "tessellated"):
                 # if self.obj.tessellated is not None:
                 #self.tess = self.obj.tessellated
@@ -2503,10 +2504,12 @@ class AddMinTessellateTask:
                 #    self.tess.Proxy.updateParams(vertex, facets, False)
                 #else:
                 #    self.tess.updateParams(vertex, facets, False)
-                return
                 pass
+                #self.form.Vertex.value.setText(str(len(vertex)))
+                #self.form.Facets.value.setText(str(len(facets)))
+                #return
 
-            if case(2):
+        elif actionType == 2:
                 if self.obj.tessellated is not None:
                     self.tess = self.obj.tessellated
                     #print("Tessellated Name " + self.tess.Name)
@@ -2521,7 +2524,7 @@ class AddMinTessellateTask:
                 #    self.tess.updateParams(vertex, facets, False)
                 # print('Update parms : '+self.tess.Name)
 
-            if case(3):
+        elif actionType == 3:
                 if hasattr(self.obj, "Proxy"):
                     print("Proxy")
                     if hasattr(self.obj.Proxy, "Type"):
@@ -2538,26 +2541,28 @@ class AddMinTessellateTask:
                             #self.tess = None
 
         # Update Panel with results from Gmsh
-        #self.form.Vertex.value.setText(str(len(vertex)))
-        #self.form.Facets.value.setText(str(len(facets)))
-        return
+        print(f"Update Panel")
+        self.form.Vertex.value.setText(str(len(vertex)))
+        self.form.Facets.value.setText(str(len(facets)))
+        #FreeCADGui.updateGui()
+        # return
 
-        if FreeCAD.GuiUp:
-            if self.operationType in [1, 2]:
-                self.obj.ViewObject.Visibility = False
-                if self.tess is not None:
-                    ViewProvider(self.tess.ViewObject)
-                    self.tess.ViewObject.DisplayMode = "Wireframe"
-                    self.tess.recompute()
-                    # FreeCAD.ActiveDocument.recompute()
-            else:
-                #print("Recompute : " + self.obj.Name)
-                print("Recompute : " + self.obj.Label)
-                self.obj.recompute()
-                self.obj.ViewObject.Visibility = True
-            print(f"View Fit Gmsh Min")
-            FreeCADGui.SendMsgToActiveView("ViewFit")
-            FreeCADGui.updateGui()
+        #if FreeCAD.GuiUp:
+        #    if self.operationType in [1, 2]:
+        #        self.obj.ViewObject.Visibility = False
+        #        if self.tess is not None:
+        #            ViewProvider(self.tess.ViewObject)
+        #            self.tess.ViewObject.DisplayMode = "Wireframe"
+        #            self.tess.recompute()
+        #            # FreeCAD.ActiveDocument.recompute()
+        #    else:
+        #        #print("Recompute : " + self.obj.Name)
+        #        print("Recompute : " + self.obj.Label)
+        #        self.obj.recompute()
+        #        self.obj.ViewObject.Visibility = True
+        #    print(f"View Fit Gmsh Min")
+        #    FreeCADGui.SendMsgToActiveView("ViewFit")
+        #    FreeCADGui.updateGui()
 
     def actionMesh(self):       # Gmsh actionMesh
         # Could be one of the following
