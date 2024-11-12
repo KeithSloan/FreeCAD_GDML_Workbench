@@ -2360,6 +2360,7 @@ class AddTessellateWidget(QtGui.QWidget):
         self.buttonMesh.setText(translate("GDML", "Mesh"))
         self.setWindowTitle(translate("GDML", "Tessellate with Gmsh"))
 
+
 class AddMinTessellateWidget(QtGui.QWidget):
     def __init__(self, Obj, GmshType, *args):
         QtGui.QWidget.__init__(self, *args)
@@ -2445,6 +2446,7 @@ class AddMinTessellateWidget(QtGui.QWidget):
         # QtCore.QTimer.singleShot(0, FreeCADGui.Control, SLOT('closeDialog()'))
         # QtCore.QTimer.singleShot(0, FreeCADGui.Control, QtCore.SLOT('closeDialog()'))
         QtCore.QTimer.singleShot(0, lambda: FreeCADGui.Control.closeDialog())
+
 
     def retranslateUi(self, widget=None):
         self.buttonMesh.setText(translate("GDML", "Mesh"))
@@ -2564,6 +2566,7 @@ class AddMinTessellateTask:
         #    FreeCADGui.SendMsgToActiveView("ViewFit")
         #    FreeCADGui.updateGui()
 
+
     def actionMesh(self):       # Gmsh actionMesh
         # Could be one of the following
         # 1 - Gmsh of Object or GDML Object
@@ -2572,6 +2575,7 @@ class AddMinTessellateTask:
 
         from .GmshUtils import (
             minMeshObject,
+            createFCShape,
             getVertex,
             getFacets,
             getMeshLen,
@@ -2613,8 +2617,11 @@ class AddMinTessellateTask:
         # Perform Gmsh Min                
         if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
             print("minMesh get facets and vertex")
-            self.facets = getFacets()
-            self.vertex = getVertex()
+            #self.facets = getFacets()
+            #print(self.facets)
+            #self.vertex = getVertex()
+            #print(self.vertex)
+            fcShape = createFCShape()
             if self.operationType == 1:
                 print(f"New Gmsh")
                 #name = "GDMLTessellate_" + self.obj.Name
@@ -2630,7 +2637,8 @@ class AddMinTessellateTask:
                         else:    
                             self.tess = FreeCAD.ActiveDocument.addObject(
                                 "Part::FeaturePython", name)
-                    print(f"Create Gmsh Tessellated Object")        
+                    print(f"Create Gmsh Tessellated Object")
+                    return
                     GDMLGmshTessellated( self.tess, self.obj,
                          getMeshLen(self.obj), self.vertex, self.facets,
                         "mm", getSelectedMaterial())
@@ -2780,8 +2788,8 @@ class AddTessellateTask:
         if meshObject(obj2Mesh, 2, int(mshTy), float(mshML), \
             float(mshCL), float(mshPL)):
             print("get facets and vertex")
-            self.facets = getFacets()
-            self.vertex = getVertex()
+            #self.facets = getFacets()
+            #self.vertex = getVertex()
             if not hasattr(obj2Mesh, "tessellated"):
                 #name = "GDMLTessellate_" + self.obj.Name
                 name = "GDMLTessellate_" + self.obj.Label

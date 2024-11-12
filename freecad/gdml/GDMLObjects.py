@@ -4163,8 +4163,8 @@ class GDMLGmshTessellated(GDMLsolid):
         obj,
         sourceObj,
         meshLen,
-        vertex,
-        facets,
+        numVertex,
+        numFacets,
         lunit,
         material,
         colour=None,
@@ -4172,11 +4172,11 @@ class GDMLGmshTessellated(GDMLsolid):
         super().__init__(obj)
         obj.addProperty(
             "App::PropertyInteger", "numFacets", "GDMLGmshTessellated", "Facets"
-        ).numFacets = len(facets)
+        ).numFacets = numFacets
         obj.setEditorMode("numFacets", 1)
         obj.addProperty(
             "App::PropertyInteger", "numVertex", "GDMLGmshTessellated", "Vertex"
-        ).numVertex = len(vertex)
+        ).numVertex = numVertex
         obj.setEditorMode("numVertex", 1)
         obj.addProperty(
             "App::PropertyLinkGlobal", "sourceObj", "GDMLGmshTessellated", "sourceObj"
@@ -4214,20 +4214,17 @@ class GDMLGmshTessellated(GDMLsolid):
         if FreeCAD.GuiUp:
             updateColour(obj, colour, material)
         self.Type = "GDMLGmshTessellated"
-        self.meshLen = meshLen
-        self.vertex = vertex
-        self.facets = facets
         self.Object = obj
         self.colour = colour
         obj.Proxy = self
         obj.Proxy.Type = "GDMLGmshTessellated"
 
-    def updateParams(self, vertex, facets, flag):
-        self.vertex = vertex
-        self.facets = facets
-        self.numFacets = len(self.facets)
-        self.numVertex = len(self.vertex)
+
+    def updateParams(self, numVertex, numFacets):
+        self.numFacets = numFacets
+        self.numVertex = numVertex
         print(f"Vertex : {self.numVertex} Facets : {self.numFacets}")
+
 
     def onChanged(self, fp, prop):
         """Do something when a property has changed"""
@@ -4247,7 +4244,7 @@ class GDMLGmshTessellated(GDMLsolid):
             if fp.editable is True:
                 self.addProperties()
 
-        if prop in ["m_Remesh"]:
+        if prop in ["Remesh"]:
             if fp.m_Remesh is True:
                 self.reMesh(fp)
                 self.execute(fp)
@@ -4266,12 +4263,12 @@ class GDMLGmshTessellated(GDMLsolid):
 
         initialize()
         meshObj(fp.Proxy.SourceObj, 2, True, fp.Proxy.Object)
-        self.facets = getFacets()
-        self.vertex = getVertex()
-        fp.Proxy.vertex = self.vertex
-        self.Object.numVertex = len(self.vertex)
-        fp.Proxy.facets = self.facets
-        self.Object.numFacets = len(self.facets)
+        #self.facets = getFacets()
+        #self.vertex = getVertex()
+        #fp.Proxy.vertex = self.vertex
+        #self.Object.numVertex = len(self.vertex)
+        #fp.Proxy.facets = self.facets
+        #self.Object.numFacets = len(self.facets)
         FreeCADGui.updateGui()
 
     # def execute(self, fp): in GDMLsolid
@@ -4342,23 +4339,6 @@ class GDMLGmshTessellated(GDMLsolid):
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement
-
-    def __getstate__(self):
-        #
-        # Change in documentation
-        #
-        # https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Scripted_objects_saving_attributes.md
-        #
-        #return self.vertex, self.facets, self.meshLen, self.colour
-        print(f"types {type(self.vertex)}")
-        return self.vertex, self.facets, self.meshLen
-
-    def __setstate__(self, state):
-        self.vertex = state[0]
-        self.facets = state[1]
-        self.sourceObj = state[2]
-        self.meshLen = state[3]
-        self.colour = state[4]
 
 
 
