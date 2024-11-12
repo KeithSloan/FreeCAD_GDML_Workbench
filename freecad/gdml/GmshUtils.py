@@ -107,6 +107,44 @@ def getMeshLen(obj):
     print("Mesh length : " + str(ml))
     return ml
 
+def setMinMeshParms(lm, lc, lp):
+    gmsh.option.setNumber("Mesh.StlLinearDeflection", 1)
+    gmsh.option.setNumber("Mesh.StlLinearDeflectionRelative", 0)
+    gmsh.option.setNumber("Mesh.StlAngularDeflection", 0.5)
+    gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 0)
+    gmsh.option.setNumber("Mesh.RecombineOptimizeTopology", 0)
+    gmsh.option.setNumber("Mesh.RecombineNodeRepositioning", 0)
+    gmsh.option.setNumber("Mesh.RecombineMinimumQuality", 1e-3)
+
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", lm)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", lc)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFromPoints", lp)
+
+
+def setMeshParms(algol, lm, lc, lp):
+    gmsh.option.setNumber("Mesh.Algorithm", algol)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", lm)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", lc)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFromPoints", lp)
+
+
+def setAltMeshParms(meshParms, obj, tessObj):
+    if meshParms == False:
+        ml = getMeshLen(obj)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthMax", ml)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", ml)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthFromPoints", ml)
+    else:
+        gmsh.option.setNumber(
+            "Mesh.CharacteristicLengthMax", tessObj.m_maxLength
+        )
+        gmsh.option.setNumber(
+            "Mesh.CharacteristicLengthFromCurvature", tessObj.m_curveLen
+        )
+        gmsh.option.setNumber(
+            "Mesh.CharacteristicLengthFromPoints", tessObj.m_pointLen
+        )
+
 
 def meshObjShape(obj, dim):
     import tempfile
@@ -349,12 +387,25 @@ def getFacets():
 
 
 def createFCShape():
+    import Part
+
     print(f"create FC Shape")
     vertex = getVertex()
     print(f"Vertex {vertex}")
     facets = getFacets()
     print(f"Facets {facets}")
+    faces = []
+    for facet in facets: 
+        # Create a wire from the vertices specified by the facet indices
+        wire = Part.makePolygon([vertex[i] for i in facet] + [vertex[facet[0]]])        # Close the loop by adding the first vertex at the end
+        face = Part.Face(wire)
+        faces.append(face)
     
+    # Create a shell and a solid from the faces
+    shell = Part.makeShell(faces)
+    solid = Part.makeSolid(shell)
+
+    return solid
 
 def getTetrahedrons():
     print("Get Tetrahedrons")
@@ -447,6 +498,8 @@ def Tetrahedron2Mesh(obj):
         if len(tet) == 4:
             addFacet(msh, tet[0], tet[2], tet[3])
     return msh
+
+
 
 
 def printMyInfo():
