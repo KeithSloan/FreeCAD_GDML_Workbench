@@ -1618,9 +1618,10 @@ def createMaterials(group):
                     )
             # process common options material / element
             processIsotope(obj, item)
-            if len(obj.Group) > 0:
-                for o in obj.Group:
-                    processFractionsComposites(o, item)
+            if hasattr(obj, "Group"):
+                if len(obj.Group) > 0:
+                    for o in obj.Group:
+                        processFractionsComposites(o, item)
 
 
 def postCreateGeantMaterials():
