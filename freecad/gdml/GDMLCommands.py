@@ -2617,11 +2617,7 @@ class AddMinTessellateTask:
         # Perform Gmsh Min                
         if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
             print("minMesh get facets and vertex")
-            #self.facets = getFacets()
-            #print(self.facets)
-            #self.vertex = getVertex()
-            #print(self.vertex)
-            fcShape = createFCShape()
+            numVertex, numFacets, fcShape  = createFCShape()
             if self.operationType == 1:
                 print(f"New Gmsh")
                 #name = "GDMLTessellate_" + self.obj.Name
@@ -2640,7 +2636,7 @@ class AddMinTessellateTask:
                     print(f"Create Gmsh Tessellated Object")
                     return
                     GDMLGmshTessellated( self.tess, self.obj,
-                         getMeshLen(self.obj), self.vertex, self.facets,
+                         getMeshLen(self.obj), numVertex, numFacets, fcShape,
                         "mm", getSelectedMaterial())
                     self.tess.addProperty(
                         "App::PropertyFloat","surfaceDev","GmshParms", \

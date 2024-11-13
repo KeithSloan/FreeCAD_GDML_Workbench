@@ -4165,6 +4165,7 @@ class GDMLGmshTessellated(GDMLsolid):
         meshLen,
         numVertex,
         numFacets,
+        #fcShape
         lunit,
         material,
         colour=None,
@@ -4181,25 +4182,14 @@ class GDMLGmshTessellated(GDMLsolid):
         obj.addProperty(
             "App::PropertyLinkGlobal", "sourceObj", "GDMLGmshTessellated", "sourceObj"
         ).sourceObj = sourceObj
+        obj.addProperty(
+            "App::PropertyFloat", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
+        ).angularDeflection = angularDeflection
         # Properties NOT the same GmshTessellate GmshMinTessellate
-        #obj.addProperty(
-        #    "App::PropertyFloat",
-        #    "m_maxLength",
-        #    "GDMLGmshTessellated",
-        #    "Max Length",
-        #).m_maxLength = meshLen
-        #obj.addProperty(
-        #    "App::PropertyFloat",
-        #    "m_curveLen",
-        #    "GDMLGmshTessellated",
-        #    "Curve Length",
-        #).m_curveLen = meshLen
-        #obj.addProperty(
-        #    "App::PropertyFloat",
-        #    "m_pointLen",
-        #    "GDMLGmshTessellated",
-        #    "Point Length",
-        #).m_pointLen = meshLen
+
+        obj.addProperty(
+            "App::PropertyFloat", "linearDeflection", "GDMLGmshTessellated", "linearDeflection"
+        ).linearDeflection = linearDeflection
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLGmshTessellated", "lunit"
         )
@@ -4218,6 +4208,7 @@ class GDMLGmshTessellated(GDMLsolid):
         self.colour = colour
         obj.Proxy = self
         obj.Proxy.Type = "GDMLGmshTessellated"
+        #self.fcShape = fcShape
 
 
     def updateParams(self, numVertex, numFacets):
@@ -4271,59 +4262,72 @@ class GDMLGmshTessellated(GDMLsolid):
         #self.Object.numFacets = len(self.facets)
         FreeCADGui.updateGui()
 
+    def GmshMinMesh(self,fp)
+        from .GmshUtils import minMeshObject, createFCShape
+
+        minMeshObject(fp.sourceObj,
+                        fp.linearDefelection,
+                        fp.angularDefelection,
+                        0)      # ???
+        fp.numVertex, fp.numFacets, fp.Shape = createFCShape()                
+
+
+
+
     # def execute(self, fp): in GDMLsolid
 
     def createGeometry(self, fp):
         currPlacement = fp.Placement
         mul = GDMLShared.getMult(fp)
-        FCfaces = []
-        for f in self.facets:
-            if len(f) == 3:
-                face = GDMLShared.triangle(
-                    mul * self.vertex[f[0]],
-                    mul * self.vertex[f[1]],
-                    mul * self.vertex[f[2]]
-                )
-                if face is not None:
-                    FCfaces.append(face)
-            else:  # len should then be 4
-                quadFace = GDMLShared.quad(
-                    mul * self.vertex[f[0]],
-                    mul * self.vertex[f[1]],
-                    mul * self.vertex[f[2]],
-                    mul * self.vertex[f[3]]
-                )
-                if quadFace is not None:
-                    FCfaces.append(quadFace)
-                else:
-                    print(f"Create Quad Failed {f[0]} {f[1]} {f[2]} {f[3]}")
-                    print("Creating as two triangles")
-                    face = GDMLShared.triangle(
-                        mul * self.vertex[f[0]],
-                        mul * self.vertex[f[1]],
-                        mul * self.vertex[f[2]]
-                    )
-                    if face is not None:
-                        FCfaces.append(face)
-                    face = GDMLShared.triangle(
-                        mul * self.vertex[f[0]],
-                        mul * self.vertex[f[2]],
-                        mul * self.vertex[f[3]]
-                    )
-                    if face is not None:
-                        FCfaces.append(face)
+        fp.Shape = self.fcShape
+        #FCfaces = []
+        #for f in self.facets:
+        #    if len(f) == 3:
+        #        face = GDMLShared.triangle(
+        #            mul * self.vertex[f[0]],
+        #            mul * self.vertex[f[1]],
+        #            mul * self.vertex[f[2]]
+        #        )
+        #        if face is not None:
+        #            FCfaces.append(face)
+        #    else:  # len should then be 4
+        #        quadFace = GDMLShared.quad(
+        #            mul * self.vertex[f[0]],
+        #            mul * self.vertex[f[1]],
+        #            mul * self.vertex[f[2]],
+        #            mul * self.vertex[f[3]]
+        #        )
+        #        if quadFace is not None:
+        #            FCfaces.append(quadFace)
+        #        else:
+        #            print(f"Create Quad Failed {f[0]} {f[1]} {f[2]} {f[3]}")
+        #            print("Creating as two triangles")
+        #            face = GDMLShared.triangle(
+        #                mul * self.vertex[f[0]],
+        #                mul * self.vertex[f[1]],
+        #                mul * self.vertex[f[2]]
+        #            )
+        #           if face is not None:
+        #                FCfaces.append(face)
+        #            face = GDMLShared.triangle(
+        #                mul * self.vertex[f[0]],
+        #                mul * self.vertex[f[2]],
+        #                mul * self.vertex[f[3]]
+        #            )
+        #            if face is not None:
+        #                FCfaces.append(face)
 
-        shell = Part.makeShell(FCfaces)
-        if shell.isValid is False:
-            FreeCAD.Console.PrintWarning("Not a valid Shell/n")
+        #shell = Part.makeShell(FCfaces)
+        #if shell.isValid is False:
+        #    FreeCAD.Console.PrintWarning("Not a valid Shell/n")
 
-        try:
-            solid = Part.Solid(shell)
-        except:
-            # make compound rather than just barf
-            # visually able to view at least
-            FreeCAD.Console.PrintWarning("Problem making Solid/n")
-            solid = Part.makeCompound(FCfaces)
+        #try:
+        #    solid = Part.Solid(shell)
+        #except:
+        #    # make compound rather than just barf
+        #    # visually able to view at least
+        #    FreeCAD.Console.PrintWarning("Problem making Solid/n")
+        #    solid = Part.makeCompound(FCfaces)
         # if solid.Volume < 0:
         #   solid.reverse()
         # print(dir(solid))

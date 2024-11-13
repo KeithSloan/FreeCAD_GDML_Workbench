@@ -405,7 +405,7 @@ def createFCShape():
     shell = Part.makeShell(faces)
     solid = Part.makeSolid(shell)
 
-    return solid
+    return len(vertex), len(facets), solid
 
 def getTetrahedrons():
     print("Get Tetrahedrons")
