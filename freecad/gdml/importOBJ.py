@@ -2,7 +2,7 @@
 # Fri Feb 11 01:11:14 PM PST 2022
 # **************************************************************************
 # *                                                                        *
-# *   Copyright (c) 2021 Keith Sloan <keith@sloan-home.co.uk>              *
+# *   Copyright (c) 2024 Keith Sloan <keith@sloan-home.co.uk>              *
 # *                                                                        *
 # *   This program is free software; you can redistribute it and/or modify *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)   *
@@ -74,18 +74,6 @@ def insert(filename, docname):
         doc = FreeCAD.newDocument(docname)
     if filename.lower().endswith('.obj'):
         processOBJ(doc, filename)
-
-
-class switch(object):
-    value = None
-
-    def __new__(class_, value):
-        class_.value = value
-        return True
-
-
-def case(*args):
-    return any((arg == switch.value for arg in args))
 
 
 class ColourWidget(QtGui.QLineEdit):
@@ -546,6 +534,7 @@ def processOBJ(doc, filePath):
     from .GDMLObjects import checkMaterialDefinitionsExist
     from datetime import datetime
 
+    from importOBJ import insert as insertObj
     #from .GDMLObjects import GDMLTessellated, ViewProvider
     #from .GDMLCommands import Mesh2TessDialog
 
@@ -558,11 +547,10 @@ def processOBJ(doc, filePath):
     mapDialog.parseObjFile(filePath)
     #print(f"Obj Dict {objDict}")
     #print(f"Time for preprocess objects materials {preTime - startTime}")
-    # Read OBJ file using FC mesh
-    #meshDoc = FreeCAD.newDocument("TempObj")
-    #print(f"Active document {FreeCADGui.ActiveDocument.Document.Name}")
-    #Mesh.open(filename)
-    Mesh.insert(filePath)
+    # Read OBJ 
+    # Important : Need to use importOBJ from BIM importers
+    # Otherwise problems with mesh objects, especially for multiple Obj
+    insertObj(filePath, doc.Name)
     fcMeshTime = datetime.now()
     #print(f"Time for FC mesh load of OBJ file {fcMeshTime - preTime}")
     Material = getSelectedMaterial()
