@@ -2575,10 +2575,10 @@ class AddMinTessellateTask:
 
         from .GmshUtils import (
             minMeshObject,
-            createFCShape,
-            getVertex,
-            getFacets,
-            getMeshLen,
+            #createFCShape,
+            #getVertex,
+            #getFacets,
+            #getMeshLen,
             printMeshInfo,
             printMyInfo,
             initialize,
@@ -2639,8 +2639,7 @@ class AddMinTessellateTask:
            #     getMeshLen(self.obj), numVertex, numFacets, fcShape,
            #    "mm", getSelectedMaterial())
            #self.tess.addProperty(
-           GDMLGmshTessellated( self.tess, self.obj,
-                  10, numVertex, numFacets, angularDev, surfaceDev,
+           GDMLGmshTessellated( self.tess, self.obj, angularDev, surfaceDev,
                   "mm", getSelectedMaterial())
            #self.tess.addProperty(
            #    "App::PropertyFloat","surfaceDev","GmshParms", \

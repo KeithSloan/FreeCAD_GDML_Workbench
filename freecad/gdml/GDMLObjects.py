@@ -4162,28 +4162,27 @@ class GDMLGmshTessellated(GDMLsolid):
         self,
         obj,
         sourceObj,
-        meshLen,
-        numVertex,
-        numFacets,
-        #fcShape
         angularDeflection,
         linearDeflection,
         lunit,
         material,
+        numVertex=0,
+        numFacets=0,
         colour=None,
     ):
         super().__init__(obj)
         obj.addProperty(
-            "App::PropertyInteger", "numFacets", "GDMLGmshTessellated", "Facets"
+            "App::PropertyInteger", "numFacets", "Read Only", "Facets"
         ).numFacets = numFacets
         obj.setEditorMode("numFacets", 1)
         obj.addProperty(
-            "App::PropertyInteger", "numVertex", "GDMLGmshTessellated", "Vertex"
+            "App::PropertyInteger", "numVertex", "Read Only", "Vertex"
         ).numVertex = numVertex
         obj.setEditorMode("numVertex", 1)
         obj.addProperty(
-            "App::PropertyLinkGlobal", "sourceObj", "GDMLGmshTessellated", "sourceObj"
+            "App::PropertyLinkGlobal", "sourceObj", "Read Only", "sourceObj"
         ).sourceObj = sourceObj
+        obj.setEditorMode("sourceObj", 1)
         obj.addProperty(
             #"App::PropertyFloat", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
             "App::PropertyInteger", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
@@ -4200,7 +4199,7 @@ class GDMLGmshTessellated(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration",
             "material",
-            "GDMLTessellated",
+            "GDMLGmshTessellated",
             "Material",
         )
         setMaterial(obj, material)
@@ -4217,7 +4216,6 @@ class GDMLGmshTessellated(GDMLsolid):
     def updateParams(self, numVertex, numFacets):
         self.numFacets = numFacets
         self.numVertex = numVertex
-        print(f"Vertex : {self.numVertex} Facets : {self.numFacets}")
 
 
     def onChanged(self, fp, prop):
