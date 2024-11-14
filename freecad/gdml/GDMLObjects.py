@@ -4166,6 +4166,8 @@ class GDMLGmshTessellated(GDMLsolid):
         numVertex,
         numFacets,
         #fcShape
+        angularDeflection,
+        linearDeflection,
         lunit,
         material,
         colour=None,
@@ -4183,7 +4185,8 @@ class GDMLGmshTessellated(GDMLsolid):
             "App::PropertyLinkGlobal", "sourceObj", "GDMLGmshTessellated", "sourceObj"
         ).sourceObj = sourceObj
         obj.addProperty(
-            "App::PropertyFloat", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
+            #"App::PropertyFloat", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
+            "App::PropertyInteger", "angularDeflection", "GDMLGmshTessellated", "angularDeflection"
         ).angularDeflection = angularDeflection
         # Properties NOT the same GmshTessellate GmshMinTessellate
 
@@ -4262,24 +4265,24 @@ class GDMLGmshTessellated(GDMLsolid):
         #self.Object.numFacets = len(self.facets)
         FreeCADGui.updateGui()
 
-    def GmshMinMesh(self,fp)
+    def GmshMinMesh(self,fp):
         from .GmshUtils import minMeshObject, createFCShape
 
-        minMeshObject(fp.sourceObj,
-                        fp.linearDefelection,
-                        fp.angularDefelection,
-                        0)      # ???
-        fp.numVertex, fp.numFacets, fp.Shape = createFCShape()                
-
-
+        minMeshObject(fp.sourceObj, fp.linearDeflection, fp.angularDeflection)
+        fp.numVertex, fp.numFacets, fp.Shape = createFCShape()
+        print(f"numVert {fp.numVertex} Shape {fp.Shape}")
 
 
     # def execute(self, fp): in GDMLsolid
 
     def createGeometry(self, fp):
+        print(f"create Geometry {fp} {fp.Shape}")
         currPlacement = fp.Placement
         mul = GDMLShared.getMult(fp)
-        fp.Shape = self.fcShape
+        #if fp.Shape is None:
+        #    self.GmshMinMesh(fp)
+        self.GmshMinMesh(fp)
+        #fp.Shape = self.fcShape
         #FCfaces = []
         #for f in self.facets:
         #    if len(f) == 3:
@@ -4339,7 +4342,7 @@ class GDMLGmshTessellated(GDMLsolid):
 
         # base = FreeCAD.Vector(0,0,0)
         # fp.Shape = translate(solid,base)
-        fp.Shape = solid
+        # fp.Shape = solid
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement

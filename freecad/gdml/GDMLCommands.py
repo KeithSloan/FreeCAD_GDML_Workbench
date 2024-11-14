@@ -2478,7 +2478,7 @@ class AddMinTessellateTask:
     def isAllowedAlterDocument(self):
         return True
 
-    def postProcessMesh(self, vertex, facets, actionType):
+    def postProcessMesh(self, actionType):
         from .GDMLObjects import ViewProvider
 
         print(f"Update Tessellated Object Operation Type {self.operationType}")
@@ -2544,27 +2544,27 @@ class AddMinTessellateTask:
 
         # Update Panel with results from Gmsh
         print(f"Update Panel")
-        self.form.Vertex.value.setText(str(len(vertex)))
-        self.form.Facets.value.setText(str(len(facets)))
+        #self.form.Vertex.value.setText(str(len(vertex)))
+        #self.form.Facets.value.setText(str(len(facets)))
         #FreeCADGui.updateGui()
         # return
 
-        #if FreeCAD.GuiUp:
-        #    if self.operationType in [1, 2]:
-        #        self.obj.ViewObject.Visibility = False
-        #        if self.tess is not None:
-        #            ViewProvider(self.tess.ViewObject)
-        #            self.tess.ViewObject.DisplayMode = "Wireframe"
-        #            self.tess.recompute()
-        #            # FreeCAD.ActiveDocument.recompute()
-        #    else:
-        #        #print("Recompute : " + self.obj.Name)
-        #        print("Recompute : " + self.obj.Label)
-        #        self.obj.recompute()
-        #        self.obj.ViewObject.Visibility = True
-        #    print(f"View Fit Gmsh Min")
-        #    FreeCADGui.SendMsgToActiveView("ViewFit")
-        #    FreeCADGui.updateGui()
+        if FreeCAD.GuiUp:
+            if self.operationType in [1, 2]:
+                self.obj.ViewObject.Visibility = False
+                if self.tess is not None:
+                    ViewProvider(self.tess.ViewObject)
+                    self.tess.ViewObject.DisplayMode = "Wireframe"
+                    self.tess.recompute()
+                    # FreeCAD.ActiveDocument.recompute()
+            else:
+                #print("Recompute : " + self.obj.Name)
+                print("Recompute : " + self.obj.Label)
+                self.obj.recompute()
+                self.obj.ViewObject.Visibility = True
+            print(f"View Fit Gmsh Min")
+            FreeCADGui.SendMsgToActiveView("ViewFit")
+            FreeCADGui.updateGui()
 
 
     def actionMesh(self):       # Gmsh actionMesh
@@ -2594,8 +2594,9 @@ class AddMinTessellateTask:
         self.operationType = 1
         obj2Mesh = self.obj
         self.tess = None
-        surfaceDev = self.form.surfaceDeviation.value.text()
-        angularDev = self.form.angularDeviation.value.text()
+        # text values or Int Float ?????
+        surfaceDev = float(self.form.surfaceDeviation.value.text())
+        angularDev = int(self.form.angularDeviation.value.text())
         # Test if action is 2 Re Gmsh of Object or GDML Object
         if hasattr(self.obj, 'tessellated'):
             if self.obj.tessellated is not None:
@@ -2615,58 +2616,62 @@ class AddMinTessellateTask:
                         obj2Mesh = self.obj.Proxy.sourceObj
                     self.operationType = 3
         # Perform Gmsh Min                
-        if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
-            print("minMesh get facets and vertex")
-            numVertex, numFacets, fcShape  = createFCShape()
-            if self.operationType == 1:
-                print(f"New Gmsh")
-                #name = "GDMLTessellate_" + self.obj.Name
-                name = "GDMLTessellate_" + self.obj.Label
-                parent = None
-                if hasattr(self.obj, "InList"):
-                    if len(self.obj.InList) > 0:
-                        parent = self.obj.InList[0]
-                        if parent.TypeId != "PartDesign::Body" and \
-                                parent is not None:
-                           self.tess = parent.newObject(
-                                 "Part::FeaturePython", name)
-                        else:    
-                            self.tess = FreeCAD.ActiveDocument.addObject(
-                                "Part::FeaturePython", name)
-                    print(f"Create Gmsh Tessellated Object")
-                    return
-                    GDMLGmshTessellated( self.tess, self.obj,
-                         getMeshLen(self.obj), numVertex, numFacets, fcShape,
-                        "mm", getSelectedMaterial())
-                    self.tess.addProperty(
-                        "App::PropertyFloat","surfaceDev","GmshParms", \
-                        "Surface Deviation")
-                    self.tess.addProperty(
-                        "App::PropertyFloat","angularDev","GmshParms", \
-                        "Angular Deviation")
-                    #setLengthQuantity(self.tess, self.obj.lunit)
-                    #setLengthQuantity(self.tess, "mm")
-                    # Make Mesh Info Visible
-                    self.form.meshInfoGroup.setVisible(True)
-                    self.tess.surfaceDev = float(surfaceDev)
-                    self.tess.angularDev = float(angularDev)
-                    # Indicate that Object has been Tessellated
-                    #self.obj.addProperty("App::PropertyLinkGlobal","tessellated","Base")
-                    #self.obj.tessellated = self.tess
-            #else:
-            #    self.processMesh(self.vertex, self.facets)
-            self.postProcessMesh(self.vertex, self.facets, self.operationType)
-            print(f"MinMsh Operation {self.operationType}")
-            #if self.operationType == 3:
-            #    self.obj.surfaceDev = float(surfaceDev)
-            #    self.obj.angularDev = float(angularDev)
-            #elif self.operationType == 2:
-            #    self.obj.tessellated.surfaceDev = float(surfaceDev)
-            #    self.obj.tessellated.angularDev = float(angularDev)
-            #elif self.operationType == 1:
-            #   FreeCADGui.Selection.clearSelection()
-            #   FreeCADGui.Selection.addSelection(self.tess)
-            
+        #if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
+        #    print("minMesh get facets and vertex")
+        #    numVertex, numFacets, fcShape  = createFCShape()
+        if self.operationType == 1:
+           print(f"New Gmsh")
+           #name = "GDMLTessellate_" + self.obj.Name
+           name = "GDMLTessellate_" + self.obj.Label
+           parent = None
+           if hasattr(self.obj, "InList"):
+               if len(self.obj.InList) > 0:
+                   parent = self.obj.InList[0]
+                   if parent.TypeId != "PartDesign::Body" and \
+                           parent is not None:
+                      self.tess = parent.newObject(
+                            "Part::FeaturePython", name)
+                   else:    
+                      self.tess = FreeCAD.ActiveDocument.addObject(
+                            "Part::FeaturePython", name)
+           print(f"Create Gmsh Tessellated Object")
+           #GDMLGmshTessellated( self.tess, self.obj,
+           #     getMeshLen(self.obj), numVertex, numFacets, fcShape,
+           #    "mm", getSelectedMaterial())
+           #self.tess.addProperty(
+           GDMLGmshTessellated( self.tess, self.obj,
+                  10, numVertex, numFacets, angularDev, surfaceDev,
+                  "mm", getSelectedMaterial())
+           #self.tess.addProperty(
+           #    "App::PropertyFloat","surfaceDev","GmshParms", \
+           #    "Surface Deviation")
+           #self.tess.addProperty(
+           #    "App::PropertyFloat","angularDev","GmshParms", \
+           #    "Angular Deviation")
+           #setLengthQuantity(self.tess, self.obj.lunit)
+           #setLengthQuantity(self.tess, "mm")
+           # Make Mesh Info Visible
+           self.form.meshInfoGroup.setVisible(True)
+           #self.tess.surfaceDev = float(surfaceDev)
+           #self.tess.angularDev = float(angularDev)
+           # Indicate that Object has been Tessellated
+           #self.obj.addProperty("App::PropertyLinkGlobal","tessellated","Base")
+           #self.obj.tessellated = self.tess
+           #else:
+
+           #    self.processMesh(self.vertex, self.facets)
+           self.postProcessMesh(self.operationType)
+           print(f"MinMsh Operation {self.operationType}")
+           #if self.operationType == 3:
+           #    self.obj.surfaceDev = float(surfaceDev)
+           #    self.obj.angularDev = float(angularDev)
+           #elif self.operationType == 2:
+           #    self.obj.tessellated.surfaceDev = float(surfaceDev)
+           #    self.obj.tessellated.angularDev = float(angularDev)
+           #elif self.operationType == 1:
+           #   FreeCADGui.Selection.clearSelection()
+           #   FreeCADGui.Selection.addSelection(self.tess)
+           
 
     def leaveEvent(self, event):
         print("Leave Event II")
