@@ -2559,6 +2559,7 @@ class AddMinTessellateTask:
             print(f"Update Panel")
             self.form.Vertex.value.setText(str(self.tess.numVertex))
             self.form.Facets.value.setText(str(self.tess.numFacets))
+            self.form.meshInfoGroup.setVisible(True)
             print(f"View Fit Gmsh Min")
             FreeCADGui.SendMsgToActiveView("ViewFit")
             FreeCADGui.updateGui()
@@ -2611,7 +2612,8 @@ class AddMinTessellateTask:
                     if hasattr(self.obj.Proxy, "sourceObj"):
                         print("Has source Object - ReMesh")
                         obj2Mesh = self.obj.Proxy.sourceObj
-                    self.operationType = 3
+                        self.form.meshInfoGroup.setVisible(True)
+                        self.operationType = 3
         # Perform Gmsh Min                
         #if minMeshObject(obj2Mesh, float(surfaceDev), float(angularDev)):
         #    print("minMesh get facets and vertex")
@@ -2983,11 +2985,12 @@ class TessGmshMinFeature:
                                 print("Update panel for EXISTING Gmsh Tessellate")
                                 panel.form.meshInfoLayout = QtGui.QHBoxLayout()
                                 panel.form.meshInfoLayout.addWidget(
-                                    oField("Vertex", 6, str(len(obj.Proxy.Vertex)))
+                                    oField("Vertex", 6, str(obj.numVertex))
                                 )  
                                 panel.form.meshInfoLayout.addWidget(
-                                    oField("Facets", 6, str(len(obj.Proxy.Facets)))
+                                    oField("Facets", 6, str(obj.numFacets))
                                 )
+
                     FreeCADGui.Control.showDialog(panel)
                 else:
                     print("Already an Active Task")
@@ -3047,15 +3050,11 @@ class TessellateGmshFeature:
                             print("Build panel for EXISTING Gmsh Tessellate")
                             panel.form.meshInfoLayout = QtGui.QHBoxLayout()
                             panel.form.meshInfoLayout.addWidget(
-                                oField("Vertex", 6, str(len(obj.Proxy.Vertex)))
+                                oField("Vertex", 6, str(len(obj.numVertex)))
                             )
                             panel.form.meshInfoLayout.addWidget(
-                                oField("Facets", 6, str(len(obj.Proxy.Facets)))
+                                oField("Facets", 6, str(len(obj.numFacets)))
                             )
-                            panel.form.Vlayout.addLayout(
-                                panel.form.meshInfoLayout
-                            )
-                            panel.form.setLayout(panel.form.Vlayout)
                     FreeCADGui.Control.showDialog(panel)
                 else:
                     print("Already an Active Task")
