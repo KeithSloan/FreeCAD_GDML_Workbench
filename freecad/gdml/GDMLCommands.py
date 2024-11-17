@@ -2542,12 +2542,6 @@ class AddMinTessellateTask:
                             # Update Info of GDML Tessellated Object
                             #self.tess = None
 
-        # Update Panel with results from Gmsh
-        print(f"Update Panel")
-        #self.form.Vertex.value.setText(str(len(vertex)))
-        #self.form.Facets.value.setText(str(len(facets)))
-        #FreeCADGui.updateGui()
-        # return
 
         if FreeCAD.GuiUp:
             if self.operationType in [1, 2]:
@@ -2562,6 +2556,9 @@ class AddMinTessellateTask:
                 print("Recompute : " + self.obj.Label)
                 self.obj.recompute()
                 self.obj.ViewObject.Visibility = True
+            print(f"Update Panel")
+            self.form.Vertex.value.setText(str(self.tess.numVertex))
+            self.form.Facets.value.setText(str(self.tess.numFacets))
             print(f"View Fit Gmsh Min")
             FreeCADGui.SendMsgToActiveView("ViewFit")
             FreeCADGui.updateGui()
