@@ -41,7 +41,7 @@ except:
     import DraftTools
 import SketcherGui
 import MeshGui
-from freecad.gdml import GDMLCommands, GDMLResources
+from freecad.gdml import GDMLCommands, GDMLResources, GDMLGmshMin
 
 def joinDir(path):
     import os
