@@ -1433,7 +1433,7 @@ class SetMaterialFeature:
         for s in sel:
             # print(s)
             # print(dir(s))
-            if hasattr(s.Object, "Shape"):
+            if hasattr(s.Object, "Shape") or hasattr(s.Object, "Mesh"):
                 cnt += 1
                 set.append(s)
         if cnt > 0:
