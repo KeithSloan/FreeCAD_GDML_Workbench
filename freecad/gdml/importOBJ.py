@@ -2,7 +2,7 @@
 # Fri Feb 11 01:11:14 PM PST 2022
 # **************************************************************************
 # *                                                                        *
-# *   Copyright (c) 2024 Keith Sloan <keith@sloan-home.co.uk>              *
+# *   Copyright (c) 2021 Keith Sloan <keith@sloan-home.co.uk>              *
 # *                                                                        *
 # *   This program is free software; you can redistribute it and/or modify *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)   *
@@ -93,7 +93,6 @@ class ColourWidget(QtGui.QLineEdit):
         self.setMaxLength = 5
         # self.setFlat(True)
         self.update()
-
 
 class TextWidget(QtGui.QLineEdit):
 
@@ -224,10 +223,6 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
 
 
     def setupUi(self):
-        # Dict objMat Name lookup by Obj Name
-        self.nameMatDict = {}
-        # Dict mtl defintions for objMat Name
-        self.objMtlDict = {}
         self.setObjectName("Dialog")
         self.resize(400, 462)
         mainLayout = QtGui.QVBoxLayout()
@@ -253,41 +248,9 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         #self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.retStatus = 0
 
-
     def initMaterials(self):
         from .GDMLMaterials import getMaterialsList, GDMLMaterial
         self.materialsList = getMaterialsList()
-
-
-    def moveMTL2Materials(self):
-        import FreeCADGui
-        self.doc.recompute()
-        print(f"Move MTFfile {self.mtlFile} to Materials")
-        #doc = FreeCADGui.ActiveDocument
-        #print(doc)
-        matGrp = self.doc.getObject("Materials")
-        print(f"Mat Grp {matGrp}")
-        if matGrp is not None:
-            if self.mtlFile is not None:
-                #sheetName = self.mtlFile.split(".")[0]+"_MTL_Materials"
-                sheetName = self.mtlFile.split(".")[0]
-                sheetName = "test_entire_obj_mtl"
-                print(f"Sheet Name {sheetName}")
-                mtlObj  = self.doc.getObject(sheetName)
-                print(f"mtlObj {mtlObj}")
-                matGrp.addObject(mtlObj)
-                self.doc.recompute()
-
-
-    def importMTL(self, filePath, mtlFile):
-        import os
-        from freecad.gdml.importMTL import processMTL
-        print(f"import MTL file {mtlFile}")
-        directory = os.path.dirname(filePath)
-        mtlPath = os.path.join(directory, mtlFile)
-        processMTL(self.doc, mtlPath, matDict=self.objMtlDict)
-        #print(f"objMtlDict {self.objMtlDict}")
-
 
     def parseObjFile(self, filePath, buildMap=True):
         import os
@@ -351,13 +314,11 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
                     if buildMap:
                         self.addMaterialMapping(name, objMat, "G4_A-150_TISSUE")
 
-
     def addMaterialMapping(self, name, objMat, gdmlMat):
         #print(f"Add Material Map Obj {name} Material {objMat} to GDML mat {gdmlMat}")        
         self.mapList.addEntry(name, objMat, gdmlMat)
         self.nameMatDict[name] = gdmlMat
         #self.objMatGDMLmat[objMat] = gdmlMat
-
 
     def getObjGDMLmaterial(self, objMat):
         cb = self.objMatGDMLmat[objMat]
@@ -375,7 +336,6 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
             if obj.TypeId == "App::Part":
                 return obj
         return None       
-
 
     def processMappingDict(self, matMap, doc, fileName,  Material="G4_A-150_TISSUE"):
         #from .GDMLObjects import setMaterial, updateColour, colorFromRay, setTransparency, setLengthQuantity
@@ -426,7 +386,6 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
               else:
                 print(f"Not found label{label} name {name}")
 
-
     def fullDisplayRadioButtonToggled(self):
         self.fullDisplayRadioButton.blockSignals(True)
 
@@ -443,18 +402,15 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
 
         self.fullDisplayRadioButton.blockSignals(False)
 
-
     def action(self):
         print(f"Map Materials")
         self.MapMaterials = True
         self.accept()
 
-
     def onCancel(self):
         print(f"reject")
         self.MapMaterials = False
         self.reject()
-
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -527,14 +483,12 @@ def getFileName(filePath):
     from pathlib import Path
     return(Path(filePath).stem)
 
-
 def processOBJ(doc, filePath):
 
     import FreeCADGui, Mesh, re, os
     from .GDMLObjects import checkMaterialDefinitionsExist
     from datetime import datetime
 
-    from importOBJ import insert as insertObj
     #from .GDMLObjects import GDMLTessellated, ViewProvider
     #from .GDMLCommands import Mesh2TessDialog
 

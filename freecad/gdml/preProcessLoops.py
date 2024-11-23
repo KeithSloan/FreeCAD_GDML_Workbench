@@ -35,6 +35,11 @@ def processLoop(loopElement):
     constantsGrp = doc.getObject('Constants')
     constants = {}
     for obj in constantsGrp.OutList:
+        # skip the spreadsheet for now. Eventually
+        # TODO read the constants from the spreadsheet
+        if obj.TypeId == "Spreadsheet::Sheet":
+            continue
+
         constants[obj.name] = obj.value
 
     var = loopElement.get("for")

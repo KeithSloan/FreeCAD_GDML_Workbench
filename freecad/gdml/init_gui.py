@@ -34,14 +34,12 @@
 # from FreeCAD import *
 import FreeCAD
 import PartGui
-import FreeCADGui
-try:
-    from draftguitools import gui_arrays
-except:
-    import DraftTools
+import DraftTools
 import SketcherGui
 import MeshGui
+import FreeCADGui
 from freecad.gdml import GDMLCommands, GDMLResources
+
 
 def joinDir(path):
     import os
@@ -113,15 +111,15 @@ class GDML_Workbench(FreeCADGui.Workbench):
             "TrapCommand",
             "TubeCommand",
             "CutTubeCommand",
-            #"Sketcher_NewSketch",
-            #"Part_Extrude",
-            #"Part_Revolve",
-            #"Part_Mirror",
-            #"Draft_ArrayTools",
+            "Sketcher_NewSketch",
+            "Part_Extrude",
+            "Part_Revolve",
+            "Part_Mirror",
+            "Draft_ArrayTools",
+            "SetScaleCommand",
             "BooleanCutCommand",
             "BooleanIntersectionCommand",
             "BooleanUnionCommand",
-            "SetScaleCommand",
             "TessellateCommand",
             "TessellateGmshCommand",
             "TessGmshMinCommand",
@@ -136,7 +134,7 @@ class GDML_Workbench(FreeCADGui.Workbench):
             "AddCompound",
         ]
 
-        tbSolidsCmds = [
+        toolbarcommands = [
             "CycleCommand",
             "ColourMapCommand",
             "ExpandCommand",
@@ -158,28 +156,16 @@ class GDML_Workbench(FreeCADGui.Workbench):
             "TrapCommand",
             "TubeCommand",
             "CutTubeCommand",
-            "BooleanCutCommand",
-            "BooleanIntersectionCommand",
-            "BooleanUnionCommand",
-            "SetScaleCommand",
-        ]
-
-        tbPartCmds = [
-            "Separator",
-            "Draft_ArrayTools",
-            "Part_Mirror",
-            "Separator",
             "Sketcher_NewSketch",
             "Part_Extrude",
             "Part_Revolve",
+            "Part_Mirror",
+            "Draft_ArrayTools",
+            "SetScaleCommand",
             "Separator",
-            "Part_Fillet",
-            "Part_Chamfer",
-            "Part_Loft",
-            "Part_Sweep",
-        ]    
-
-        tbTessCmds = [    
+            "BooleanCutCommand",
+            "BooleanIntersectionCommand",
+            "BooleanUnionCommand",
             "Separator",
             "TessellateCommand",
             "GmshGroupCommand",
@@ -192,9 +178,11 @@ class GDML_Workbench(FreeCADGui.Workbench):
             "AddCompound",
         ]
 
-        toolbarCmds = tbSolidsCmds + tbPartCmds + tbTessCmds
+        # parttoolbarcommands = ['Part_Cut','Part_Fuse','Part_Common']
+        # meshtoolbarcommands = ['Mesh_FromPartShape','Mesh_Evaluation']
+
         self.appendToolbar(
-            QT_TRANSLATE_NOOP("Workbench", "GDMLTools"), toolbarCmds
+            QT_TRANSLATE_NOOP("Workbench", "GDMLTools"), toolbarcommands
         )
         self.appendMenu("GDML", commands)
         # self.appendToolbar(QT_TRANSLATE_NOOP('Workbech','GDML Part tools'),parttoolbarcommands)
