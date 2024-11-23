@@ -97,12 +97,19 @@ def processSelected(array):
     placement = array.Placement
     placements = getArrayPlacements(array, placement)
     base = getBase(array)
-    for p in placements:
-        new = doc.copyObject(base)
-        new.Placement = p
-        new.ViewObject.Visibility = True
-        parent.addObject(new)
-        expandedList.append(new.Name)
+    for i, p in enumerate(placements):
+        if i == 0:
+            new0 = doc.copyObject(base, True)
+            new0.Placement = p
+            new0.ViewObject.Visibility = True
+            parent.addObject(new0)
+            expandedList.append(new0.Name)
+        else:
+            new = parent.newObject("App::Link", new0.Label) 
+            new.Placement = p
+            new.LinkedObject = new0
+            new.ViewObject.Visibility = True
+            expandedList.append(new.Name)
 
     removeArray(array)
     parentName = parent.Name
