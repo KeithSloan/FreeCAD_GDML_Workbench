@@ -34,7 +34,10 @@
 # from FreeCAD import *
 import FreeCAD
 import PartGui
-import DraftTools
+try:
+    from draftguitools import gui_arrays
+except:
+    import DraftTools
 import SketcherGui
 import MeshGui
 import FreeCADGui
