@@ -534,7 +534,10 @@ def processOBJ(doc, filePath):
     from .GDMLObjects import checkMaterialDefinitionsExist
     from datetime import datetime
 
-    from importOBJ import insert as insertObj
+    try:        # Fix for FC 1.0.0
+         from importers.importOBJ import insert as insertObj
+    except:
+        from importOBJ import insert as insertObj
     #from .GDMLObjects import GDMLTessellated, ViewProvider
     #from .GDMLCommands import Mesh2TessDialog
 
