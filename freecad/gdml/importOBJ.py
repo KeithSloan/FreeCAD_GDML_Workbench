@@ -172,14 +172,19 @@ class MaterialMapList(QtGui.QScrollArea):
 
         #print(f"objMtlDict {self.objMtlDict}")
         #print(f"objMat {objMat} {self.objMtlDict[objMat]}")
-        mtlDict = self.objMtlDict[objMat]
-        Ka = mtlDict["Ka"]
-        # Variable with RGB values as a tuple
-        # print(f"Ka {Ka}")
-        # Convert values to the 0-255 range expected by QColor
-        r, g, b = [int(x * 255) for x in Ka]
-        # Return QColor object
-        # color = QColor(r, g, b)
+        r = 5
+        g = 0
+        b = 10
+        mtlDict = self.objMtlDict.get(objMat)
+        if mtlDict is not None:
+            Ka = mtlDict.get("Ka")
+            if Ka is not None:
+                # Variable with RGB values as a tuple
+                # print(f"Ka {Ka}")
+                # Convert values to the 0-255 range expected by QColor
+                r, g, b = [int(x * 255) for x in Ka]
+                # Return QColor object
+                # color = QColor(r, g, b)
         return QColor(r, g, b)
 
 
@@ -195,16 +200,20 @@ class MaterialMapList(QtGui.QScrollArea):
 
     def getColourMaterial4Name(self, objName):
         print(f"getColourMaterial4Name {objName}")
-        entry = self.NameMatWdgDict[objName]
-        qtColor = self.NameColourDict[objName]
-        fcColour = (
-            qtColor.red() / 255.0,
-            qtColor.green() / 255.0,
-            qtColor.blue() / 255.0
-            )
-        #vcColour = FreeCAD.Vector(*fcColour)
-        #print(f"Entry {entry} {entry.getItem()}")
-        Material = entry.getItem()
+        entry = self.NameMatWdgDict.get(objName)
+        fcColour = (0.4, 0.0, 0.8)
+        Material = "G4_A-150_TISSUE"
+        if entry is not None:
+            qtColor = self.NameColourDict.get(objName)
+            if qtColor is not None:
+                fcColour = (
+                    qtColor.red() / 255.0,
+                    qtColor.green() / 255.0,
+                    qtColor.blue() / 255.0
+                    )
+                #vcColour = FreeCAD.Vector(*fcColour)
+                #print(f"Entry {entry} {entry.getItem()}")
+                Material = entry.getItem()
         return fcColour, Material
 
 
@@ -285,8 +294,10 @@ class MapObjmat2GDMLmatDialog(QtGui.QDialog):
         print(f"import MTL file {mtlFile}")
         directory = os.path.dirname(filePath)
         mtlPath = os.path.join(directory, mtlFile)
-        processMTL(self.doc, mtlPath, matDict=self.objMtlDict)
-        #print(f"objMtlDict {self.objMtlDict}")
+        if os.path.isfile(mtlPath) == True:
+            processMTL(self.doc, mtlPath, matDict=self.objMtlDict)
+            #print(f"objMtlDict {self.objMtlDict}")
+        print(f"import MTL file {mtlFile} does not exist")
 
 
     def parseObjFile(self, filePath, buildMap=True):
