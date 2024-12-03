@@ -1,0 +1,4 @@
+python3 extractVol.py 1 UT00 ../SampleFiles/CERN/Alice/alice.gdml /tmp/test
+#python3 extractVol.py 'World' ../SampleFiles/CERN/lhcbvelo.gdml /tmp/test
+#python3 extractVol.py ../SampleFiles/CERN/Alice/alice.gdml 
+#python3 extractVol.py /home/keith/MEGAsync/GDML/Louis/luxe.gdml 

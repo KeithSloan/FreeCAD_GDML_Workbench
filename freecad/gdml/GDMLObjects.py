@@ -30,9 +30,9 @@
 # *                                                                        *
 # *                                                                        *
 # **************************************************************************
+from operator import indexOf
 
 import FreeCAD, FreeCADGui, Part
-from pivy import coin
 import math
 from . import GDMLShared
 
@@ -49,9 +49,11 @@ global SurfsList
 SurfsList = []
 
 global LengthQuantityList
-LengthQuantityList = ["nm", "um", "mm", "cm", "dm", "m", "km"]
+LengthQuantityList = ["nm", "um", "mm", "cm", "m", "km"]
 # cf definition https://wiki.freecadweb.org/Quantity
-
+# BUT, geant does not support dm (decimeter), so I removed it from above. (MMH - 2024-09-08)
+AngleQuantityList = ["rad", "radian", "deg", "degree", "mrad"]
+# geant also accepts mrad (for millirad), but since FreeCAD does not, we skip that.
 
 def setLengthQuantity(obj, m):
     global LengthQuantityList
@@ -64,6 +66,26 @@ def setLengthQuantity(obj, m):
     else:
         obj.lunit = 2
 
+def setAngleQuantity(obj, m):
+    global AngleQuantityList
+    if AngleQuantityList is not None:
+        obj.aunit = AngleQuantityList
+        obj.aunit = 0
+        if len(AngleQuantityList) > 0:
+            if not (m == 0 or m is None):
+                if m == "rad":
+                    obj.aunit = AngleQuantityList.index("rad")
+                elif m == "radian":
+                    obj.aunit = AngleQuantityList.index("radian")
+                elif m=="deg":
+                    obj.aunit = AngleQuantityList.index("deg")
+                elif m == "degree":
+                    obj.aunit = AngleQuantityList.index("degree")
+                elif m=="mrad":
+                    obj.aunit = AngleQuantityList.index("mrad")
+
+    else:
+        obj.aunit = 0  # in geant if angle is not given, it is assumed radians
 
 def getSurfsListFromGroup(doc):
     SurfsList = ["None"]
@@ -164,18 +186,23 @@ def setMaterial(obj, m):
 
 def checkFullCircle(aunit, angle):
     # print(angle)
-    if aunit == "deg" and angle == 360:
+    if (aunit == "deg" or aunit == "degree") and angle == 360:
         return True
-    if aunit == "rad" and angle == 2 * math.pi:
+    if (aunit == "rad" or aunit == "radian") and angle == 2 * math.pi:
         return True
+    if aunit == "mrad" and angle/1000 == 2 * math.pi:
+        return True
+
     return False
 
 
 # Get angle in Radians
 def getAngleRad(aunit, angle):
     # print("aunit : "+str(aunit))
-    if aunit == "deg":  # 0 radians 1 Degrees
+    if aunit == "deg" or aunit == "degree":  # 0 radians 1 Degrees
         return angle * math.pi / 180
+    elif aunit == "mrad":
+        return angle/1000.
     else:
         return angle
 
@@ -183,8 +210,10 @@ def getAngleRad(aunit, angle):
 # Get angle in Degrees
 def getAngleDeg(aunit, angle):
     # print("aunit : "+str(aunit))
-    if aunit == "rad":  # 0 radians 1 Degrees
+    if aunit == "rad" or aunit == "radian":  # 0 radians 1 Degrees
         return angle * 180 / math.pi
+    elif aunit == "mrad":
+        return angle/1000. * 180 /math.pi
     else:
         return angle
 
@@ -351,10 +380,9 @@ def updateColour(obj, colour, material):
     if colour is None:
         colour = colourMaterial(material)
     obj.ViewObject.ShapeColor = colour
-    #print(f'Colour {colour}')
+    # print(f'Colour {colour}')
     if colour is not None:
-        #obj.ViewObject.Transparency = int(colour[3] * 100)
-        obj.ViewObject.Transparency = int(colour[2] * 100)
+        obj.ViewObject.Transparency = int(colour[3] * 100)
 
 
 def setTransparency(obj, value=70):
@@ -439,10 +467,10 @@ class GDMLsolid:
         we must define this method\
         to return a tuple of all serializable objects or None."""
         if hasattr(self, "Type"):
-            #print(f"getstate : Type {self.Type}")
+            # print(f"getstate : Type {self.Type}")
             return {"type": self.Type}
         elif hasattr(self.Proxy, "Type"):
-            #print(f"getstate : Type {self.Proxy.Type}")
+            # print(f"getstate : Type {self.Proxy.Type}")
             return {"type": self.Proxy.Type}
 
         else:
@@ -643,50 +671,86 @@ class GDMLArb8(GDMLsolid):  # Thanks to Dam Lamb
     #    point 6 is connected with points 2,5,7
     #    point 7 is connected with points 3,4,6
 
+    def isTwisted(self, fp):
+        ''' test if the upper face is twisted relative to the lower face
+        Computation here mimics that in G4GenericTrap
+        '''
+        verts2D = [(fp.v1x, fp.v1y), (fp.v2x, fp.v2y), (fp.v3x, fp.v3y), (fp.v4x, fp.v4y),
+                   (fp.v5x, fp.v5y), (fp.v6x, fp.v6y), (fp.v7x, fp.v7y), (fp.v8x, fp.v8y)]
+
+        nv = 4
+
+        tolerance = 1.E-03
+        twisted = False
+        for i in range(4):
+            dx1 = verts2D[(i+1) % nv][0] - verts2D[i][0]
+            dy1 = verts2D[(i+1) % nv][1] - verts2D[i][1]
+            if dx1 == 0 and dy1 == 0:
+                continue
+            dx2 = verts2D[nv + (i+1) % nv][0] - verts2D[nv + i][0]
+            dy2 = verts2D[nv + (i+1) % nv][1] - verts2D[nv + i][1]
+            if dx2 == 0 and dy2 == 0:
+                continue
+            twist_angle = abs(dy1*dx2 - dx1*dy2)  # this is sin(angle)
+            if twist_angle < tolerance:
+                continue
+            twisted = True
+            break
+
+        return twisted
+
     def createGeometry(self, fp):
 
         currPlacement = fp.Placement
         mul = GDMLShared.getMult(fp)
+        subdivisions = 0
+        if self.isTwisted(fp):
+            subdivisions = 8
 
-        pt1 = FreeCAD.Vector(fp.v1x * mul, fp.v1y * mul, -fp.dz * mul)
-        pt2 = FreeCAD.Vector(fp.v2x * mul, fp.v2y * mul, -fp.dz * mul)
-        pt3 = FreeCAD.Vector(fp.v3x * mul, fp.v3y * mul, -fp.dz * mul)
-        pt4 = FreeCAD.Vector(fp.v4x * mul, fp.v4y * mul, -fp.dz * mul)
-        pt5 = FreeCAD.Vector(fp.v5x * mul, fp.v5y * mul, fp.dz * mul)
-        pt6 = FreeCAD.Vector(fp.v6x * mul, fp.v6y * mul, fp.dz * mul)
-        pt7 = FreeCAD.Vector(fp.v7x * mul, fp.v7y * mul, fp.dz * mul)
-        pt8 = FreeCAD.Vector(fp.v8x * mul, fp.v8y * mul, fp.dz * mul)
+        # old construction was giving a Volume that was off by about 3%
+        # compared to geant4's. So imitate geant4's construction
 
-        faceZmin = Part.Face(Part.makePolygon([pt1, pt2, pt3, pt4, pt1]))
-        faceZmax = Part.Face(Part.makePolygon([pt5, pt6, pt7, pt8, pt5]))
+        pt1 = mul * FreeCAD.Vector(fp.v1x, fp.v1y, -fp.dz)
+        pt2 = mul * FreeCAD.Vector(fp.v2x, fp.v2y, -fp.dz)
+        pt3 = mul * FreeCAD.Vector(fp.v3x, fp.v3y, -fp.dz)
+        pt4 = mul * FreeCAD.Vector(fp.v4x, fp.v4y, -fp.dz)
+        pt5 = mul * FreeCAD.Vector(fp.v5x, fp.v5y, fp.dz)
+        pt6 = mul * FreeCAD.Vector(fp.v6x, fp.v6y, fp.dz)
+        pt7 = mul * FreeCAD.Vector(fp.v7x, fp.v7y, fp.dz)
+        pt8 = mul * FreeCAD.Vector(fp.v8x, fp.v8y, fp.dz)
 
-        faceXminA = Part.Face(Part.makePolygon([pt1, pt2, pt6, pt1]))
-        faceXminB = Part.Face(Part.makePolygon([pt6, pt5, pt1, pt6]))
-        faceXmaxA = Part.Face(Part.makePolygon([pt4, pt3, pt7, pt4]))
-        faceXmaxB = Part.Face(Part.makePolygon([pt8, pt4, pt7, pt8]))
+        verts3D = [pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8]
 
-        faceYminA = Part.Face(Part.makePolygon([pt1, pt8, pt4, pt1]))
-        faceYminB = Part.Face(Part.makePolygon([pt1, pt5, pt8, pt1]))
 
-        faceYmaxA = Part.Face(Part.makePolygon([pt2, pt3, pt7, pt2]))
-        faceYmaxB = Part.Face(Part.makePolygon([pt2, pt7, pt6, pt2]))
+        faces = []
+        faces.append(Part.Face(Part.makePolygon([verts3D[0], verts3D[3], verts3D[2], verts3D[1], verts3D[0]])))  # -fz plane
+        # breakpoint()
+        t = 0
+        dt = 1./(subdivisions+1)
+        u0 = verts3D[4] - verts3D[0]
+        u1 = verts3D[5] - verts3D[1]
+        u2 = verts3D[6] - verts3D[2]
+        u3 = verts3D[7] - verts3D[3]
+        for i in range(subdivisions+1):
+            j = i*4
+            faces.append(Part.Face(Part.makePolygon([verts3D[0] + t * u0, verts3D[1]  + t * u1, verts3D[0] + (t + dt) * u0, verts3D[0] + t * u0])))
+            faces.append(Part.Face(Part.makePolygon([verts3D[0] + (t + dt) * u0, verts3D[1]  + t * u1, verts3D[1] + (t + dt) * u1, verts3D[0] + (t + dt) * u0])))
 
-        fp.Shape = Part.makeSolid(
-            Part.makeShell(
-                [
-                    faceXminA,
-                    faceXminB,
-                    faceXmaxA,
-                    faceXmaxB,
-                    faceYminA,
-                    faceYminB,
-                    faceYmaxA,
-                    faceYmaxB,
-                    faceZmin,
-                    faceZmax,
-                ]
-            )
-        )
+            faces.append(Part.Face(Part.makePolygon([verts3D[1] + t * u1, verts3D[2]  + t * u2, verts3D[1] + (t + dt) * u1, verts3D[1] + t * u1])))
+            faces.append(Part.Face(Part.makePolygon([verts3D[1] + (t + dt) * u1, verts3D[2]  + t * u2, verts3D[2] + (t + dt) * u2, verts3D[1] + (t + dt) * u1])))
+
+            faces.append(Part.Face(Part.makePolygon([verts3D[2] + t * u2, verts3D[3]  + t * u3, verts3D[2] + (t + dt) * u2, verts3D[2] + t * u2])))
+            faces.append(Part.Face(Part.makePolygon([verts3D[2] + (t + dt) * u2, verts3D[3]  + t * u3, verts3D[3] + (t + dt) * u3, verts3D[2] + (t + dt) * u2])))
+
+            faces.append(Part.Face(Part.makePolygon([verts3D[3] + t * u3, verts3D[0]  + t * u0, verts3D[3] + (t + dt) * u3, verts3D[3] + t * u3])))
+            faces.append(Part.Face(Part.makePolygon([verts3D[3] + (t + dt) * u3, verts3D[0]  + t * u0, verts3D[0] + (t + dt) * u0, verts3D[3] + (t + dt) * u3])))
+
+            t += dt
+
+        faces.append(Part.Face(Part.makePolygon([verts3D[4], verts3D[5], verts3D[6], verts3D[7], verts3D[4]])))  # +fz plane
+
+        fp.Shape = Part.makeSolid(Part.makeShell(faces))
+
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement
@@ -807,8 +871,7 @@ class GDMLCone(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLCone", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLCone", "lunit"
         )
@@ -972,6 +1035,7 @@ class GDMLElCone(GDMLsolid):
 
     # def execute(self, fp): in GDMLsolid
 
+    '''
     def createGeometry(self, fp):
         # Form the Web page documentation page for elliptical cone:
         # https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -1018,6 +1082,63 @@ class GDMLElCone(GDMLsolid):
             fp.Shape = cone2.cut(box)
         else:
             fp.Shape = cone2
+        if hasattr(fp, "scale"):
+            super().scale(fp)
+        fp.Placement = currPlacement
+        '''
+
+
+    def createGeometry(self, fp):
+        # Form the Web page documentation page for elliptical cone:
+        # https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
+        # the parametric equation of the elliptical cone:
+        # x = dx*(zmax - u) * cos(v), v = 0..2Pi (note, as of 2021-11-21,
+        # web page mistakenly shows /u)
+        # y = dy*(zmax - u) * sin(v)
+        # z = u, u = -zcut..zcut
+        # Therefore the bottom base of the cone (at z=u=-zcut) has
+        # xmax = dxmax = dx*(zmax+zcut)
+        # and ymax=dymax = dy*(zmax+zcut)
+        # The ellipse at the top has simi-major axis dx*(zmax-zcut) and
+        # semiminor axis dy*(zmax-zcut)
+        # as per the above, the "bottom of the cone is at z = -zcut
+        # Note that dx is a SCALING factor for the semi major axis,
+        # NOT the actual semi major axis
+        # ditto for dy
+
+        mul = GDMLShared.getMult(fp)
+        currPlacement = fp.Placement
+        # Semi axis values so need to double
+        dx = fp.dx
+        dy = fp.dy
+        zcut = fp.zcut * mul
+        zmax = fp.zmax * mul
+        a_bot = dx*(zmax + zcut)
+        a_top = dx*(zmax - zcut)
+        b_bot = dy*(zmax + zcut)
+        b_top = dy*(zmax - zcut)
+
+        if dx > dy:
+            ellipse_bot = Part.Ellipse(FreeCAD.Vector(0, 0, 0), a_bot, b_bot)
+            ellipse_top = Part.Ellipse(FreeCAD.Vector(0, 0, 0), a_top, b_top)
+        else:
+            ellipse_bot = Part.Ellipse(FreeCAD.Vector(0, 0, 0), b_bot, a_bot)
+            ellipse_top = Part.Ellipse(FreeCAD.Vector(0, 0, 0), b_top, a_top)
+
+        edge_bot = Part.Edge(ellipse_bot)
+        edge_top = Part.Edge(ellipse_top)
+
+        if dy > dx:
+            edge_bot.rotate(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 90)
+            edge_top.rotate(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 90)
+        edge_bot.translate(FreeCAD.Vector(0, 0, -zcut))
+        edge_top.translate(FreeCAD.Vector(0, 0, zcut))
+
+        wire_bot = Part.Wire(edge_bot)
+        wire_top = Part.Wire(edge_top)
+        solid = Part.makeLoft([wire_bot, wire_top], True, False)
+
+        fp.Shape = solid
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement
@@ -1189,6 +1310,7 @@ class GDMLElTube(GDMLsolid):
 
     # def execute(self, fp): in GDMLsolid
 
+    '''
     def createGeometry(self, fp):
         currPlacement = fp.Placement
         mul = GDMLShared.getMult(fp)
@@ -1203,6 +1325,29 @@ class GDMLElTube(GDMLsolid):
         newtube = tube.transformGeometry(mat)
         base = FreeCAD.Vector(0, 0, -(fp.dz * mul))  # dz is half height
         fp.Shape = translate(newtube, base)
+        if hasattr(fp, "scale"):
+            super().scale(fp)
+        fp.Placement = currPlacement
+    '''
+    def createGeometry(self, fp):
+        currPlacement = fp.Placement
+        mul = GDMLShared.getMult(fp)
+        dx = fp.dx * mul
+        dy = fp.dy * mul
+        h = 2 * fp.dz * mul
+        if dy > dx:
+            ellipse = Part.Ellipse(FreeCAD.Vector(0, 0, 0), dy, dx)
+        else:
+            ellipse = Part.Ellipse(FreeCAD.Vector(0, 0, 0), dx, dy)
+        edge = Part.Edge(ellipse)
+        edge.translate(FreeCAD.Vector(0,0,-h/2))
+        if dy > dx:
+            edge.rotate(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 90)
+        wire = Part.Wire(edge)
+        face = Part.Face(wire)
+        solid = face.extrude(FreeCAD.Vector(0, 0, h))
+
+        fp.Shape = solid
         if hasattr(fp, "scale"):
             super().scale(fp)
         fp.Placement = currPlacement
@@ -1305,8 +1450,7 @@ class GDMLPara(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLParapiped", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLParapiped", "lunit"
         )
@@ -1452,8 +1596,7 @@ class GDMLHype(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLHype", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLHype", "lunit"
         )
@@ -1692,8 +1835,7 @@ class GDMLPolyhedra(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLPolyhedra", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLPolyhdera", "lunit"
         )
@@ -1887,8 +2029,7 @@ class GDMLGenericPolyhedra(GDMLsolid):
             "GDMLGenericPolyhedra",
             "aunit",
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration",
             "lunit",
@@ -2166,8 +2307,7 @@ class GDMLTwistedbox(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTwistedbox", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLTwistedbox", "lunit"
         )
@@ -2330,8 +2470,7 @@ class GDMLTwistedtrap(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTwistedtrap", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLTwistedtrap", "lunit"
         )
@@ -2512,8 +2651,7 @@ class GDMLTwistedtrd(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTwistedtrd", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         setLengthQuantity(obj, lunit)
         obj.addProperty(
             "App::PropertyEnumeration",
@@ -2659,8 +2797,7 @@ class GDMLTwistedtubs(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTwistedtubs", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         setLengthQuantity(obj, lunit)
         obj.addProperty(
             "App::PropertyEnumeration",
@@ -3037,8 +3174,7 @@ class GDMLPolycone(GDMLsolid):  # Thanks to Dam Lamb
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLPolycone", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLPolycone", "lunit"
         )
@@ -3162,8 +3298,7 @@ class GDMLGenericPolycone(GDMLsolid):  # Thanks to Dam Lamb
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLPolycone", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLPolycone", "lunit"
         )
@@ -3275,8 +3410,7 @@ class GDMLSphere(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLSphere", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLSphere", "lunit"
         )
@@ -3494,8 +3628,7 @@ class GDMLTrap(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTrap", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLTrap", "lunit"
         )
@@ -3750,8 +3883,7 @@ class GDMLTube(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLTube", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyEnumeration", "lunit", "GDMLTube", "lunit"
         )
@@ -3868,8 +4000,7 @@ class GDMLcutTube(GDMLsolid):
         obj.addProperty(
             "App::PropertyEnumeration", "aunit", "GDMLcutTube", "aunit"
         )
-        obj.aunit = ["rad", "deg"]
-        obj.aunit = ["rad", "deg"].index(aunit[0:3])
+        setAngleQuantity(obj, aunit)
         obj.addProperty(
             "App::PropertyFloat", "lowX", "GDMLcutTube", "low X"
         ).lowX = lowX
@@ -5231,101 +5362,82 @@ class GDMLopticalsurface(GDMLcommon):
         obj.addProperty(
             "App::PropertyEnumeration", "model", "GDMLoptical", "model"
         )
-        obj.addProperty(
-            "App::PropertyInteger", "modelNum", "GDMLoptical", "modelNum"
-        )
         self.modelList = [
-            "glisur",  # original GEANT3 model \
-            "unified",  # UNIFIED model  \
-            "LUT",  # Look-Up-Table model (LBNL model) \
-            "DAVIS",  # DAVIS model \
-            "dichroic",  # dichroic filter \
-            "Numeric",
+            "glisur",   # 0 original GEANT3 model
+            "unified",  # 1 UNIFIED model
+            "LUT",      # 2 Look-Up-Table model (LBNL model)
+            "DAVIS",    # 3 DAVIS model
+            "dichroic"  # 4 dichroic filter
         ]
         obj.model = self.modelList
         # Set passed value
         if model.isnumeric():
-            obj.modelNum = int(model)
-            obj.model = "Numeric"
+            obj.model = self.modelList[int(model)]
         else:
             obj.model = model
-            obj.modelNum = self.modelList.index(model)
 
         # finish    
         obj.addProperty(
             "App::PropertyEnumeration", "finish", "GDMLoptical" "finish"
         )
-        obj.addProperty(
-            "App::PropertyInteger", "finishNum", "GDMLoptical" "finishNum"
-        )
         self.finish = [
-            "polished | polished",  # smooth perfectly polished surface
-            "polished | frontpainted",  # smooth top-layer (front) paint
-            "polished | backpainted",  # same is 'polished' but with a back-paint
-            # meltmount
-            "polished | air",  # mechanically polished surface
-            "polished | teflonair",  # mechanically polished surface, with teflon
-            "polished | tioair",  # mechanically polished surface, with tio paint
-            "polished | tyvekair",  #  mechanically polished surface, with tyvek
-            "polished | vm2000air",  # mechanically polished surface, with esr film
-            "polished | vm2000glue",  # mechanically polished surface, with esr film &
-            # // for LBNL LUT model
-            "polished | lumirrorair",  # mechanically polished surface, with lumirror
-            "polished | lumirrorglue",  # mechanically polished surface, with lumirror &
-            # meltmount
-            "etched | lumirrorair",  # chemically etched surface, with lumirror
-            "etched | lumirrorglue",  # chemically etched surface, with lumirror & meltmount
-            "etched | air",  # chemically etched surface
-            "etched | teflonair",  # chemically etched surface, with teflon
-            "etched | tioair",  # chemically etched surface, with tio paint
-            "etched | tyvekair",  # chemically etched surface, with tyvek
-            "etched | vm2000air",  # chemically etched surface, with esr film
-            "etched | vm2000glue",  # chemically etched surface, with esr film & meltmount
-            "ground | ground",  # // rough surface
-            "ground | frontpainted",  # rough top-layer (front) paint
-            "ground | backpainted",  # same as 'ground' but with a back-paint
-            "ground | lumirrorair",  # rough-cut surface, with lumirror
-            "ground | lumirrorglue",  # rough-cut surface, with lumirror & meltmount
-            "ground | air",  # rough-cut surface
-            "ground | teflonair",  # rough-cut surface, with teflon
-            "ground | tioair",  # rough-cut surface, with tio paint
-            "ground | tyvekair",  # rough-cut surface, with tyvek
-            "ground | vm2000air",  # rough-cut surface, with esr film
-            "ground | vm2000glue",  # rough-cut surface, with esr film & meltmount
-            "Rough_LUT",  # rough surface \
-            "RoughTeflon_LUT",  # rough surface wrapped in Teflon tape \
-            "RoughESR_LUT",  # rough surface wrapped with ESR \
-            "RoughESRGrease_LUT",  # rough surface wrapped with ESR \
-            # and coupled with optical grease
-            "Polished_LUT",  # polished surface \
-            "PolishedTeflon_LUT",  # polished surface wrapped in Teflon tape \
-            "PolishedESR_LUT",  # polished surface wrapped with ESR \
-            "PolishedESRGrease_LUT",  # polished surface wrapped with ESR \
-            # and coupled with optical grease
-            "Detector_LUT",  # polished surface with optical grease
-            "Numeric"
+            "polished",             # 0  smooth perfectly polished  surface
+            "polishedfrontpainted", # 1  smooth top - layer(front)  paint
+            "polishedbackpainted",  # 2  same is 'polished' but with a back-paint
+
+            "ground",               # 3 rough surface
+            "groundfrontpainted",   # 4 rough top-layer (front) paint
+            "groundbackpainted",    # 5 same as 'ground' but with a back-paint
+
+            # for LBNL LUT model
+            "polishedlumirrorair",  # 6 mechanically polished surface, with lumirror
+            "polishedlumirrorglue", # 7 mechanically polished surface, with lumirror & meltmount
+            "polishedair",          # 8 mechanically polished surface
+            "polishedteflonair",    # 9 mechanically polished surface, with teflon
+            "polishedtioair",       # 10 mechanically polished surface, with tio paint
+            "polishedtyvekair",     # 11 mechanically polished surface, with tyvek
+            "polishedvm2000air",    # 12 mechanically polished surface, with esr film
+            "polishedvm2000glue",   # 13 mechanically polished surface, with esr film & meltmount
+
+            "etchedlumirrorair",    # 14 chemically etched surface, with lumirror
+            "etchedlumirrorglue",   # 15 chemically etched surface, with lumirror & meltmount
+            "etchedair",            # 16 chemically etched surface
+            "etchedteflonair",      # 17 chemically etched surface, with teflon
+            "etchedtioair",         # 18 chemically etched surface, with tio paint
+            "etchedtyvekair",       # 19 chemically etched surface, with tyvek
+            "etchedvm2000air",      # 20 chemically etched surface, with esr film
+            "etchedvm2000glue",     # 21 chemically etched surface, with esr film & meltmount
+
+            "groundlumirrorair",    # 22 rough-cut surface, with lumirror
+            "groundlumirrorglue",   # 23 rough-cut surface, with lumirror & meltmount
+            "groundair",            # 24 rough-cut surface
+            "groundteflonair",      # 25 rough-cut surface, with teflon
+            "groundtioair",         # 26 rough-cut surface, with tio paint
+            "groundtyvekair",       # 27 rough-cut surface, with tyvek
+            "groundvm2000air",      # 28 rough-cut surface, with esr film
+            "groundvm2000glue",     # 29 rough-cut surface, with esr film & meltmount
+
+            # for DAVIS model
+            "Rough_LUT",            # 30 rough surface
+            "RoughTeflon_LUT",      # 31 rough surface wrapped in Teflon tape
+            "RoughESR_LUT",         # 32 rough surface wrapped with ESR
+            "RoughESRGrease_LUT",   # 33 rough surface wrapped with ESR
+                                    # and coupled with optical grease
+            "Polished_LUT",         # 34 polished surface
+            "PolishedTeflon_LUT",   # 35 polished surface wrapped in Teflon tape
+            "PolishedESR_LUT",      # 36 polished surface wrapped with ESR
+            "PolishedESRGrease_LUT", # 37 polished surface wrapped with ESR
+                                     # and coupled with optical grease
+            "Detector_LUT"           # 38 polished surface with optical grease
         ]
         obj.finish = self.finish
         if finish.isnumeric():
-            obj.finishNum = int(finish)
-            obj.finish = "Numeric"
-        elif finish == "polished":
-            obj.finish = "polished | polished"
-        elif finish == "ground":
-            obj.finish = "ground | ground"
+            obj.finish = self.finish[int(finish)]
         else:
-            #print(f"last finish {finish}")
-            finish = finish.replace("polished", "polished | ")
-            finish = finish.replace("etched", "etched | ")
-            finish = finish.replace("ground", "ground | ")
             obj.finish = finish
-            obj.finishNum = self.finish.index(finish)
 
         obj.addProperty(
             "App::PropertyEnumeration", "type", "GDMLoptical", "type"
-        )
-        obj.addProperty(
-            "App::PropertyInteger", "typeNum", "GDMLoptical", "typeNum"
         )
         self.type = [                  # enum G4SurfaceType
             "dielectric_metal",       # dielectric-metal interface
@@ -5336,64 +5448,21 @@ class GDMLopticalsurface(GDMLcommon):
             "firsov",                 # for Firsov Process
             "x_ray",                  # for x-ray mirror process
             "coated",                 # coated_dielectric-dielectric interface
-            "Numeric"
         ]
         obj.type = self.type
         if typeVal.isnumeric():
-            obj.typeNum = int(typeVal)
-            obj.type = "Numeric"
+            obj.type = self.type[int(typeVal)]
         else:
             obj.type = typeVal
-            obj.typeNum = self.type.index(typeVal)
 
         obj.addProperty(
             "App::PropertyFloat", "value", "GDMLoptical"
         ).value = value
         obj.Proxy = self
-        self.Object = obj
-        self.ToNum = False
 
     def onChanged(self, fp, prop):
-        #print(f"OnChanged prop {prop}")
-        if prop == "finish":
-            #print(f"Change finish {fp.finish} {fp.finishNum} {self.ToNum}")
-            if fp.finish != "Numeric":
-                self.ToNum = True
-                fp.finishNum = self.finish.index(fp.finish)
-        
-        elif prop == "finishNum":
-            #print(f"Change finishNum {fp.finish} {fp.finishNum} {self.ToNum}")
-            if self.ToNum == False:
-                if fp.finish != "Numeric":
-                    fp.finish = "Numeric"
-            self.ToNum = False
-
-        if prop == "type":
-            #print(f"Change type {fp.type} {fp.typeNum} {self.ToNum}")
-            if fp.type != "Numeric":
-                self.ToNum = True
-                fp.typeNum = self.type.index(fp.type)
-        
-        elif prop == "typeNum":
-            #print(f"Change TypeNum")
-            if self.ToNum == False:
-                if fp.type != "Numeric":
-                    fp.type = "Numeric"
-            self.ToNum = False
-
-        if prop == "model":
-            #print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
-            if fp.type != "Numeric":
-                self.ToNum = True
-                fp.modelNum = self.modelList.index(fp.model)
-
-        elif prop == "modelNum":
-            #print(f"Change model {fp.model} {fp.modelNum} {self.ToNum}")
-            if self.ToNum == False:
-                if fp.model != "Numeric":
-                    fp.model = "Numeric"
-            self.ToNum = False
-
+        if prop in ["finishNum", "typeNum", "modelNum"]:
+            print(f"property {prop} is no longer supported. Please adjust property {prop[:-3]}")
 
 class GDMLskinsurface(GDMLcommon):
     def __init__(self, obj, name, prop):
@@ -5407,6 +5476,19 @@ class GDMLskinsurface(GDMLcommon):
 
 # ??? need for GDMLcommon ???
 class GDMLbordersurface(GDMLcommon):
+    '''
+    In gdml the bordersurface takes the name of a surface and the name of two physvols
+    that are the placement of two volumes that contain the solids whose surfaces have
+    a common border. In FreeCAD we do not have an object that corresponds directly
+    to a physvol. We have an App::Part object that results in the creation of two gdml
+    objects: (1) a <volume and (2) a <physvol. Usually, but not always, the name of the
+    <volume is the Label of the App::Part. Usually, but not always, the name of the physvol
+    is PV- + App::Part.Label. Because it is not always the case that the physvols do not have
+    the usual names, the GDMLbordersurface does NOT store the physvol name, but rather
+    the App::Part object that will, eventually, on export, result in a <physvol. We do not
+    apriori know the name of that physvol. So the properties PV1 and PV2 below are NOT,
+    strictly speaking physvols, they are the App::Parts that will result in the export of a physvol
+    '''
     def __init__(self, obj, name, surface, pv1, pv2, check):
         super().__init__(obj)
         # print(f'pv1 : {pv1} pv2 : {pv2}')
