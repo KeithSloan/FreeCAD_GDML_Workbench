@@ -82,6 +82,7 @@ and the Placement of the GDMLObject
 ### gmsh python library
 
 The workbench uses the gmsh python library and must be installed in a location that FreeCAD sees
+The python version of the library needs to match the one being used by Python
 
 To check path FreeCAD uses from a command line/window.
 
@@ -94,6 +95,30 @@ In a command window / line
     pip install --upgrade --target <Full path to directory> gmsh
 
 Windows: if no --target option upgrade pip
+
+### Sucessful installation on MacOS for FreeCAD 1.0.0
+
+As FreeCAD 1.0.0 is using python3.11.10
+
+Install  python3.11 on Mac using
+```
+homebrew python@3.11
+```
+Then installed rhino3dm
+```
+pip install rhino3dm
+```
+Then in FreeCAD path with the --no-cache option
+```
+python3.11 -m pip install rhino3dm --upgrade -t'/Applications/FreeCAD 1.0.0.app/Contents/Resources/lib/python3.11/site-packages' --no-cache
+Collecting rhino3dm
+  Downloading rhino3dm-8.9.0-cp311-cp311-macosx_14_0_universal2.whl.metadata (1.3 kB)
+Downloading rhino3dm-8.9.0-cp311-cp311-macosx_14_0_universal2.whl (8.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.4/8.4 MB 4.3 MB/s eta 0:00:00
+Installing collected packages: rhino3dm
+Successfully installed rhino3dm-8.9.0
+```
+
 
 ### Successful installation of workbench & gmsh on Windows.
 
