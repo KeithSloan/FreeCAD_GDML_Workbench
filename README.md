@@ -591,7 +591,8 @@ as per the above link.
 
 * See reference - 245 http://doi.org/10.1140/epjs/s11734-021-00249-z
 
-* See reference - 1 https://www.researchgate.net/publication/372909610_VPG4_Versatile_Parallelizable_Geant4_Interface_A_Novel_Platform_for_Modeling_Complex_Nuclear_Medicine_Imaging_Scanners
+* See reference - 1 VPG4_Versatile_Parallelizable_Geant4_Interface_A_Novel_Platform_for_Modeling_Complex_Nuclear_Medicine_Imaging_Scanners
+   - https://www.researchgate.net/publication/372909610_VPG4_Versatile_Parallelizable_Geant4_Interface_A_Novel_Platform_for_Modeling_Complex_Nuclear_Medicine_Imaging_Scanners
 
 * Flexible and Generic Framework for Complex Nuclear Medicine Scanners using FreeCAD/GDML Workbench
   
