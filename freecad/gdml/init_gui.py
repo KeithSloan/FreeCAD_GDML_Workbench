@@ -34,14 +34,15 @@
 # from FreeCAD import *
 import FreeCAD
 import PartGui
-import FreeCADGui
 try:
     from draftguitools import gui_arrays
 except:
     import DraftTools
 import SketcherGui
 import MeshGui
+import FreeCADGui
 from freecad.gdml import GDMLCommands, GDMLResources
+
 
 def joinDir(path):
     import os
